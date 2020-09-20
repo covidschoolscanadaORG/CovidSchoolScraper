@@ -16,8 +16,8 @@ INSTALLATION
 This module has several prerequisites to install prior to usage. Assuming
 you are using an Ubuntu style system with "apt", run the following:
 
-  apt install libhtml-tableextractor-perl libwww-perl \
-              liblwp-protocol-https-perl libdatetime-perl
+    apt install libhtml-tableextractor-perl libwww-perl \
+    		liblwp-protocol-https-perl libdatetime-perl
 
 Then, to install this module, run the following commands:
 
@@ -40,15 +40,15 @@ without any arguments. To get the CSV, run with the name of a parser.
 
 Example output:
 
-  % scrapeSchool.pl yorkRegionalDSB
-  # York Regional DSB scraped at 2020-09-20T17:16:50
-  School Name,Coâânfirmed Cases,Closed Classrooms,Closure Status
-  Adrienne Clarkson P.S,0,0,Open
-  Aldergrove P.S,0,0,Open
-  Alexander Mackenzie H.S,0,0,Open
-  Alexander Muir P.S,0,0,Open
-  Anne Frank P.S,0,0,Open
-  ...
+	% scrapeSchool.pl yorkRegionalDSB
+	# York Regional DSB scraped at 2020-09-20T17:16:50
+	School Name,Coâânfirmed Cases,Closed Classrooms,Closure Status
+	Adrienne Clarkson P.S,0,0,Open
+	Aldergrove P.S,0,0,Open
+	Alexander Mackenzie H.S,0,0,Open
+	Alexander Muir P.S,0,0,Open
+	Anne Frank P.S,0,0,Open
+	...
 
 To generate a running record of timestamped school advisories, use the
 scrapeSchools.pl script (note plural "schools"). It takes a single
@@ -56,35 +56,35 @@ argument which is the name of a directory to store the data in. Each
 time you run it, it will create a new timestamped file and generate a
 diff of the previous one.
 
-   % script/scrapeSchools.pl /tmp/schools
-   % ls -lR /tmp/schools
-   /tmp/schools/:
-   total 32
-   drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Durham DSB'
-   drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Durham-Peel Catholic DSB'
-   drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Halton Catholic DSB'
-   drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Halton District School Board'
-   drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Renfrew County DSB'
-   drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Toronto DSB'
-   drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Waterloo Regional DSB'
-   drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'York Regional DSB'
+     % script/scrapeSchools.pl /tmp/schools
+     % ls -lR /tmp/schools
+     /tmp/schools/:
+     total 32
+     drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Durham DSB'
+     drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Durham-Peel Catholic DSB'
+     drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Halton Catholic DSB'
+     drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Halton District School Board'
+     drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Renfrew County DSB'
+     drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Toronto DSB'
+     drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Waterloo Regional DSB'
+     drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'York Regional DSB'
 
-   '/tmp/schools/Durham DSB':
-   total 24
-   -rw-rw-r-- 1 lstein lstein 4991 Sep 20 17:20 2020-09-20T17:20:13.csv
-   -rw-rw-r-- 1 lstein lstein 4991 Sep 20 17:20 2020-09-20T17:20:20.csv
-   -rw-rw-r-- 1 lstein lstein    0 Sep 20 17:20 2020-09-20T17:20:20.diff
-   -rw-rw-r-- 1 lstein lstein 4991 Sep 20 17:20 2020-09-20T17:20:24.csv
-   -rw-rw-r-- 1 lstein lstein    0 Sep 20 17:20 2020-09-20T17:20:24.diff
+     '/tmp/schools/Durham DSB':
+     total 24
+     -rw-rw-r-- 1 lstein lstein 4991 Sep 20 17:20 2020-09-20T17:20:13.csv
+     -rw-rw-r-- 1 lstein lstein 4991 Sep 20 17:20 2020-09-20T17:20:20.csv
+     -rw-rw-r-- 1 lstein lstein    0 Sep 20 17:20 2020-09-20T17:20:20.diff
+     -rw-rw-r-- 1 lstein lstein 4991 Sep 20 17:20 2020-09-20T17:20:24.csv
+     -rw-rw-r-- 1 lstein lstein    0 Sep 20 17:20 2020-09-20T17:20:24.diff
 
-   '/tmp/schools/Durham-Peel Catholic DSB':
-   total 36
-   -rw-rw-r-- 1 lstein lstein 5168 Sep 20 17:20 2020-09-20T17:20:14.csv
-   -rw-rw-r-- 1 lstein lstein 5168 Sep 20 17:20 2020-09-20T17:20:21.csv
-   -rw-rw-r-- 1 lstein lstein  628 Sep 20 17:20 2020-09-20T17:20:21.diff
-   -rw-rw-r-- 1 lstein lstein 5168 Sep 20 17:20 2020-09-20T17:20:24.csv
-   -rw-rw-r-- 1 lstein lstein 6382 Sep 20 17:20 2020-09-20T17:20:24.diff
-   ...
+     '/tmp/schools/Durham-Peel Catholic DSB':
+     total 36
+     -rw-rw-r-- 1 lstein lstein 5168 Sep 20 17:20 2020-09-20T17:20:14.csv
+     -rw-rw-r-- 1 lstein lstein 5168 Sep 20 17:20 2020-09-20T17:20:21.csv
+     -rw-rw-r-- 1 lstein lstein  628 Sep 20 17:20 2020-09-20T17:20:21.diff
+     -rw-rw-r-- 1 lstein lstein 5168 Sep 20 17:20 2020-09-20T17:20:24.csv
+     -rw-rw-r-- 1 lstein lstein 6382 Sep 20 17:20 2020-09-20T17:20:24.diff
+     ...
 
 ADDING NEW SCRAPERS
 
