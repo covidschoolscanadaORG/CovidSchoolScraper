@@ -134,5 +134,5 @@ This software is Copyright (c) 2020 by Lincoln Stein.
 
 This is free software, licensed under:
 
-  The Artistic License 2.0 (GPL Compatible)
+  GNU General General Public License v3
 
