@@ -1,15 +1,9 @@
 CovidSchools-SchoolScraper
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
-
-A README file is required for CPAN modules since CPAN extracts the README
-file from a module distribution so that people browsing the archive
-can use it to get an idea of the module's uses. It is usually a good idea
-to provide version information here so that people can decide whether
-fixes for the module are worth downloading.
+This is a Perl library and series of scripts that support the
+Masks4Canada (https://masks4canada.org/) effort to provide transparent
+and timely reports of Canadian school cases and closures during the
+COVID-19 pandemic.
 
 INSTALLATION
 
@@ -56,9 +50,10 @@ argument which is the name of a directory to store the data in. Each
 time you run it, it will create a new timestamped file and generate a
 diff of the previous one.
 
-     % script/scrapeSchools.pl /tmp/schools
-     % ls -lR /tmp/schools
-     /tmp/schools/:
+     % mkdir ./scraped_data
+     % script/scrapeSchools.pl ./scraped_data
+     % ls -lR ./scraped_data
+     ./scraped_data/:
      total 32
      drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Durham DSB'
      drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Durham-Peel Catholic DSB'
@@ -69,7 +64,7 @@ diff of the previous one.
      drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'Waterloo Regional DSB'
      drwxrwxr-x 2 lstein lstein 4096 Sep 20 17:20 'York Regional DSB'
 
-     '/tmp/schools/Durham DSB':
+     './scraped_data/Durham DSB':
      total 24
      -rw-rw-r-- 1 lstein lstein 4991 Sep 20 17:20 2020-09-20T17:20:13.csv
      -rw-rw-r-- 1 lstein lstein 4991 Sep 20 17:20 2020-09-20T17:20:20.csv
@@ -77,7 +72,7 @@ diff of the previous one.
      -rw-rw-r-- 1 lstein lstein 4991 Sep 20 17:20 2020-09-20T17:20:24.csv
      -rw-rw-r-- 1 lstein lstein    0 Sep 20 17:20 2020-09-20T17:20:24.diff
 
-     '/tmp/schools/Durham-Peel Catholic DSB':
+     './scraped_data/Durham-Peel Catholic DSB':
      total 36
      -rw-rw-r-- 1 lstein lstein 5168 Sep 20 17:20 2020-09-20T17:20:14.csv
      -rw-rw-r-- 1 lstein lstein 5168 Sep 20 17:20 2020-09-20T17:20:21.csv
@@ -124,27 +119,22 @@ As long as you run the scrape scripts from within the script directory
 of the Git project, the scraper modules that depend on Puppeteer will
 work.
 
+CRON SCRIPT
+
+The script directory includes a script named nighly-cron.pl that
+downloads newest data from each defined school district and then
+mirrors the cumulative data to a designated Google Drive. The
+mirroring part requires installation of the rclone package
+(https://rclone.org/). There are several steps needed to connect
+rclone to the correct Google Drive. Please see the documentation at
+https://rclone.org/drive/ for a good step-by-step guide.
+
 SUPPORT AND DOCUMENTATION
 
 After installing, you can find documentation for this module with the
 perldoc command.
 
     perldoc CovidSchools::SchoolScraper
-
-You can also look for information at:
-
-    RT, CPAN's request tracker (report bugs here)
-        https://rt.cpan.org/NoAuth/Bugs.html?Dist=CovidSchools-SchoolScraper
-
-    AnnoCPAN, Annotated CPAN documentation
-        http://annocpan.org/dist/CovidSchools-SchoolScraper
-
-    CPAN Ratings
-        https://cpanratings.perl.org/d/CovidSchools-SchoolScraper
-
-    Search CPAN
-        https://metacpan.org/release/CovidSchools-SchoolScraper
-
 
 LICENSE AND COPYRIGHT
 

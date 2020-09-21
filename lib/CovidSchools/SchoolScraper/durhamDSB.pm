@@ -41,10 +41,17 @@ sub parse {
     $self->{schools} = \%schools;
 }
 
-# this does nothing because there is no HTML table
+# this does nothing but add the timestamp to the CSV table downloaded from Google
 sub csv {
-    my $csv = shift->{raw_content};
-    $csv    =~ s/,\s*$//gm;  # remove pesky trailing commas
+    my $self = shift;
+    
+    my $date = DateTime->now(time_zone=>'local')->set_time_zone('floating');
+    my $csv = '';
+    $csv   .= "# ".$self->district." scraped at $date\n";
+
+    my $table = $self->{raw_content};
+    $table    =~ s/,\s*$//gm;  # remove pesky trailing commas
+    $csv .= $table;
     $csv;
 }
 
