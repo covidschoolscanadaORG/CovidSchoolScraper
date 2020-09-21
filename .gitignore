@@ -35,3 +35,7 @@ inc/
 /*.zip
 
 *~
+/puppeteer/
+/scraped_data/
+ignore.txt
+test.pl

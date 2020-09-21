@@ -24,23 +24,23 @@ Then, to install this module, run the following commands:
 	perl Makefile.PL
 	make
 	make test
-	make install
+	# make install   - Not recommended; run from the Git directory
 
 RUNNING THE SCRIPTS
 
 To fetch CSV for a single school, run the scrapeSchool script. Prior
 to installation, it will be located in the "script"
 subdirectory. After installation, it will be in /usr/local/bin or
-similar.
+similar, but this is not recommended!
 
-  % scrapeSchool.pl <school board parser>
+  % script/scrapeSchool.pl <school board parser>
 
 To get the list of defined school board parsers, run the script
 without any arguments. To get the CSV, run with the name of a parser.
 
 Example output:
 
-	% scrapeSchool.pl yorkRegionalDSB
+	% script/scrapeSchool.pl yorkRegionalDSB
 	# York Regional DSB scraped at 2020-09-20T17:16:50
 	School Name,Coâânfirmed Cases,Closed Classrooms,Closure Status
 	Adrienne Clarkson P.S,0,0,Open
@@ -105,6 +105,24 @@ A few special cases may help you along:
 
 2. durhamDSB.pm uses a Google doc instead of an HTML form. This example shows how
    to override the parse() method in order to deal with a new content type.
+
+NODEJS AND PUPPETEER
+
+At least one of the GTA school districts (Peel DSB) generates its advisory pages
+dynamically with Javascript, and a regular ol' HTML parser won't cut it. For these
+modules to work, you must install Puppeteer, a headless version of Google Chrome that
+can be used to fetch and process the Javascript and turn it into parseable HTML. In the
+base of the Git directory for this project, fun the following commands:
+
+    sudo apt-get update
+    sudo apt install nodejs npm    # lots of packages will be installed!!!!
+    mkdir puppeteer
+    chdir puppeteer
+    npm i puppeteer
+
+As long as you run the scrape scripts from within the script directory
+of the Git project, the scraper modules that depend on Puppeteer will
+work.
 
 SUPPORT AND DOCUMENTATION
 
