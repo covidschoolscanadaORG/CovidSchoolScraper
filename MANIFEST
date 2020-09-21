@@ -5,16 +5,17 @@ lib/CovidSchools/SchoolScraper/durhamDSB.pm
 lib/CovidSchools/SchoolScraper/durhamPeelCatholicDSB.pm
 lib/CovidSchools/SchoolScraper/haltonCatholicDSB.pm
 lib/CovidSchools/SchoolScraper/haltonDSB.pm
+lib/CovidSchools/SchoolScraper/peelDSB.pm
 lib/CovidSchools/SchoolScraper/renfrewDSB
 lib/CovidSchools/SchoolScraper/renfrewDSB.pm
 lib/CovidSchools/SchoolScraper/torontoDSB.pm
 lib/CovidSchools/SchoolScraper/waterlooRegionalDSB.pm
 lib/CovidSchools/SchoolScraper/yorkRegionalDSB.pm
+lib/CovidSchools/SchoolScraperPuppeteer.pm
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
 notes/schools.conf
-README
 README.md
 script/scrapeSchool.pl
 script/scrapeSchools.pl
