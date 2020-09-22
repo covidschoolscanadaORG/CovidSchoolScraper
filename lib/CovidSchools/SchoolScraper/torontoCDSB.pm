@@ -1,4 +1,4 @@
-package CovidSchools::SchoolScraper::torontoDSB;
+package CovidSchools::SchoolScraper::torontoCDSB;
 
 use 5.006;
 use strict;
@@ -15,7 +15,7 @@ sub new {
 
 sub table_fields {
     return ('School Name',
-	    'Student or Staff (#)',
+	    'Student or Staff',
 	    'School Status');
 }
 
