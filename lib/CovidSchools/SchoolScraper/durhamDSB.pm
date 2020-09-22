@@ -45,10 +45,8 @@ sub parse {
 sub csv {
     my $self = shift;
     
-    my $date = DateTime->now(time_zone=>'local')->set_time_zone('floating');
     my $csv = '';
-    $csv   .= "# ".$self->district." scraped at $date\n";
-
+    $csv   .= $self->header;
     my $table = $self->{raw_content};
     $table    =~ s/,\s*$//gm;  # remove pesky trailing commas
     $csv .= $table;

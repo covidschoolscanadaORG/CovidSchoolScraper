@@ -12,26 +12,23 @@ use IO::Dir;
 
 my $DATADIR = shift or die "Usage: scrapeSchools.pl <destination directory>";
 
+my $dest_file = dest_file_path($DATADIR);
+open my $fh,'>',$dest_file or die "$dest_file: $!";
+
 my @s = CovidSchools::SchoolScraper->board_subclasses;
 for my $subclass (@s) {
-    eval "use $subclass; 1" or die $@;
-    my $dsb = $subclass->new();
-    my $dest_file = scrape_and_save($dsb);
-    generate_diff($dest_file);
+    eval "use $subclass; 1"    or die $@;
+    my $dsb = $subclass->new() or die $@;
+    $dsb->scrape()             or die $@;
+    print $fh "===============================================\n";
+    my $csv =  $dsb->csv;
+    $csv    =~ s/^\#\s+date:.+/-----------------------------------------------/m;
+    print $fh "$csv\n";
 }
+close $fh or die "$dest_file close failure: $!";
+generate_diff($dest_file);
 
 exit 0;
-
-sub scrape_and_save {
-    my $dsb = shift;
-    $dsb->scrape();
-
-    my $dest_file = dest_csv_path($dsb);
-    open my $fh,'>',"$dest_file" or die "$dest_file: $!";
-    print $fh $dsb->csv;
-    close $fh                    or die "$dest_file: $!";
-    return $dest_file;
-}
 
 sub generate_diff {
     my $dest_file  = shift;
@@ -39,8 +36,8 @@ sub generate_diff {
     my $prior_file = find_previous($dest_file);
     return unless -e $prior_file;
     my $dir        = dirname($dest_file);
-    my $diff_file  = $dir.'/'.basename($dest_file,'.csv').'.diff';
-    system "diff '$prior_file' '$dest_file' > '$diff_file'";
+    my $diff_file  = $dir.'/'.basename($dest_file,'.csv').'.diff.txt';
+    system "diff    '$prior_file' '$dest_file' > '$diff_file'";
 }
 
 sub find_previous {
@@ -54,6 +51,7 @@ sub find_previous {
     my %listing;
     while (defined($_ = $d->read)) {
 	next if /^\./;
+	next if /\.diff\.txt$/;
 	my $time  = (stat("$dir/$_"))[9];
 	$listing{$_} = $time;
     }
@@ -68,15 +66,13 @@ sub find_previous {
     return $dir.'/'.$sorted[$last];
 }
 
-sub dest_csv_path {
-    my $dsb = shift;
+sub dest_file_path {
+    my $path = shift;
+
     my $date = DateTime->now(time_zone=>'local')->set_time_zone('floating');
-
-    my $dest_dir = "$DATADIR/".$dsb->district;
-    make_path($dest_dir) or die "Couldn't create path to $dest_dir: $!"
-	unless -e $dest_dir;
-
-    return "$dest_dir/$date.csv";
+    make_path($path) or die "Couldn't create path to $path: $!"
+	unless -e $path;
+    return "$path/AllDSB-$date.csv";
 }
 
 

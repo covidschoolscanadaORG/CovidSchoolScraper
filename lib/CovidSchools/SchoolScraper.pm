@@ -220,13 +220,11 @@ Returns a comma-separated-values version of the school closure table.
 sub csv {
     my $self = shift;
 
-    my $date = DateTime->now(time_zone=>'local')->set_time_zone('floating');
-
     my ($school,@fields) = $self->table_fields;
     my $literal_headers  = $self->parsed_headers() || [$school,@fields];
     
     my $csv = '';
-    $csv   .= "# ".$self->district." scraped at $date\n";
+    $csv   .= $self->header;
     $csv   .= join (',',@$literal_headers)."\n";
     for my $sch ($self->schools) {
 	$csv .= join(',',
@@ -235,6 +233,23 @@ sub csv {
 		     ). "\n";
     }
     return $csv;
+}
+
+=head2 $header = $ss->header;
+
+Returns the file header string which identifies the time, date and source of the scrape
+
+=cut
+
+sub header {
+    my $self = shift;
+    my $date = DateTime->now(time_zone=>'local')->set_time_zone('floating');
+    my $url  = $self->url;
+    my $d   = '';
+    $d     .= "# district: ".$self->district."\n";
+    $d     .= "# source: $url\n";
+    $d     .= "# date: $date\n";
+   return $d;
 }
 
 =head2 $error = $ss->error('new error')
