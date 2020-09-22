@@ -1,12 +1,10 @@
 Changes
-ignore.txt
 lib/CovidSchools/SchoolScraper.pm
 lib/CovidSchools/SchoolScraper/durhamDSB.pm
 lib/CovidSchools/SchoolScraper/durhamPeelCatholicDSB.pm
 lib/CovidSchools/SchoolScraper/haltonCatholicDSB.pm
 lib/CovidSchools/SchoolScraper/haltonDSB.pm
 lib/CovidSchools/SchoolScraper/peelDSB.pm
-lib/CovidSchools/SchoolScraper/renfrewDSB
 lib/CovidSchools/SchoolScraper/renfrewDSB.pm
 lib/CovidSchools/SchoolScraper/torontoDSB.pm
 lib/CovidSchools/SchoolScraper/waterlooRegionalDSB.pm
