@@ -20,9 +20,9 @@ for my $subclass (@s) {
     eval "use $subclass; 1"    or die $@;
     my $dsb = $subclass->new() or die $@;
     $dsb->scrape()             or die $@;
-    print $fh "===============================================\n";
+    print $fh "# ===============================================\n";
     my $csv =  $dsb->csv;
-    $csv    =~ s/^\#\s+date:.+/-----------------------------------------------/m;
+    $csv    =~ s/^\#\s+date:.+/# -----------------------------------------------/m;
     print $fh "$csv\n";
 }
 close $fh or die "$dest_file close failure: $!";

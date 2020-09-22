@@ -5,8 +5,9 @@ use FindBin '$Bin';
 use lib "$Bin/../lib";
 use CovidSchools::SchoolScraper;
 
-use feature 'unicode_strings';
-binmode STDOUT,":encoding(UTF-8)";
+# unsuccessful attempt to get rid of weird chars
+# use feature 'unicode_strings';
+# binmode STDOUT,":encoding(UTF-8)";
 
 my $subclass = shift || print_error_message_and_die();
 

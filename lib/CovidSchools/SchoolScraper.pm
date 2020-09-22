@@ -9,9 +9,11 @@ use HTML::TableExtract;
 use File::Basename 'dirname','basename';
 use DateTime;
 use Carp 'croak';
-use utf8;
-use Encode;
-use URI::Escape;
+
+# unsuccessful attempt to get rid of weird HTML characters
+# use utf8;
+# use Encode;
+# use URI::Escape;
 
 =head1 NAME
 
@@ -143,7 +145,8 @@ sub scrape {
 	return;
     }
 
-    $self->parse(decode('utf8',uri_unescape($res->content)));
+    #    $self->parse(decode('utf8',uri_unescape($res->content)));
+    $self->parse($res->content);
     return 1;
 }
 
