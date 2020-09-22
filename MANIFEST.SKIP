@@ -1,0 +1,7 @@
+scraped_data/
+puppeteer/
+\.git/
+blib/
+~$
+
+	
