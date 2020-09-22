@@ -1,4 +1,6 @@
+.gitignore
 Changes
+ignore.txt
 lib/CovidSchools/SchoolScraper.pm
 lib/CovidSchools/SchoolScraper/durhamDSB.pm
 lib/CovidSchools/SchoolScraper/durhamPeelCatholicDSB.pm
@@ -6,19 +8,30 @@ lib/CovidSchools/SchoolScraper/haltonCatholicDSB.pm
 lib/CovidSchools/SchoolScraper/haltonDSB.pm
 lib/CovidSchools/SchoolScraper/peelDSB.pm
 lib/CovidSchools/SchoolScraper/renfrewDSB.pm
+lib/CovidSchools/SchoolScraper/torontoCDSB.pm
 lib/CovidSchools/SchoolScraper/torontoDSB.pm
 lib/CovidSchools/SchoolScraper/waterlooRegionalDSB.pm
 lib/CovidSchools/SchoolScraper/yorkRegionalDSB.pm
 lib/CovidSchools/SchoolScraperPuppeteer.pm
 LICENSE
+Makefile
 Makefile.PL
 MANIFEST			This list of files
+MANIFEST.bak
+MANIFEST.SKIP
+MYMETA.json
+MYMETA.yml
+notes/google_drive.txt
 notes/schools.conf
+pm_to_blib
 README.md
+script/nightly-cron.pl
 script/scrapeSchool.pl
 script/scrapeSchools.pl
+script/scrapeSchoolsBatch.pl
 t/00-load.t
 t/manifest.t
 t/pod-coverage.t
 t/pod.t
+test.pl
 xt/boilerplate.t
