@@ -8,6 +8,8 @@ use LWP;
 use HTML::TableExtract;
 use File::Basename 'dirname','basename';
 use DateTime;
+use utf8;
+use feature 'unicode_strings';
 use Carp 'croak';
 
 # unsuccessful attempt to get rid of weird HTML characters
@@ -147,17 +149,16 @@ sub scrape {
 
     #    $self->parse(decode('utf8',uri_unescape($res->content)));
     $self->parse($res->content);
-    return 1;
 }
 
 sub parse {
     my $self = shift;
     my $html_data = shift;
+
+#     $self->clean_html_text(\$html_data);   # get rid of wide characters (yuck)
     
     $self->{raw_content} = $html_data;
-    my $te = HTML::TableExtract->new(headers      => $self->column_headers,
-				     keep_headers => 1,
-	);
+    my $te = $self->create_extractor();
 
     $te->parse($html_data);
     unless ($te && $te->tables) {
@@ -167,6 +168,32 @@ sub parse {
 
     $self->_create_school_data_structure($te);
     return 1;
+}
+
+=head2 $extractor = $self->create_extractor()
+
+Return a properly initialized. HTML::TableExtract object
+
+=cut
+
+sub create_extractor {
+    my $self = shift;
+    HTML::TableExtract->new(headers      => $self->column_headers,
+			    keep_headers => 1,
+			    debug        => 0,
+	);
+}
+
+=head2 $ss->clean_html_text(\$text)
+
+Removes wide characters from HTML text. Pass a scalar ref.
+
+=cut
+
+sub clean_html_text {
+    my $self = shift;
+    my $text = shift;
+    $$text  =~ s/[^\x00-\x7f]//g;
 }
 
 =head2 @schools = $ss->schools
@@ -226,8 +253,11 @@ Returns a comma-separated-values version of the school closure table.
 sub csv {
     my $self = shift;
 
+    # sigh, more cleanup...
     my ($school,@fields) = $self->table_fields;
     my $literal_headers  = $self->parsed_headers() || [$school,@fields];
+
+    no warnings 'uninitialized';
     
     my $csv = '';
     $csv   .= $self->header;
@@ -235,7 +265,7 @@ sub csv {
     for my $sch ($self->schools) {
 	$csv .= join(',',
 		     $sch,
-		     @{$self->school($sch)}{@fields},
+		     @{$self->school($sch)}{@fields,'<undefined>'}, # for stupid Greater Essex bug that I don't have patience to fix right
 		     ). "\n";
     }
     return $csv;
@@ -290,9 +320,12 @@ sub _create_school_data_structure {
 	# remove extraneous leading & trailing chars (don't know what causes this)
 	foreach (@$row) {
 	    next unless defined $_;
-	    s/[\r\n]+/ /g;  # no newlines please!
-	    s/[^a-zA-Z0-9()]+$//;
-	    s/^[^a-zA-Z0-9()]+//;
+	    s/[\r\n]+/ /g;     # no newlines please!
+	    s/[\x00-\x1F]//g;  # no control characters
+	    s/\s{2,}/ /g;      # no redundant white space
+	    s/^\s+//g;         # no whitespace at beginning
+	    s/\s+$//g;         # no whitespace at end
+	    s/,//g;            # no commas!
 	}
 
 	unless ($self->{parsed_headers}) { # first row
@@ -302,7 +335,15 @@ sub _create_school_data_structure {
 	    
 	my ($school,@data) = @$row;
 	next unless $school;
+
+	# stupid workaround for broken Greater Essex school
+	while (@data > @fields) {
+	    push @fields,'<undefined>';
+	}
+
 	@{$schools{$school}}{@fields} = @data;
+
+	
 
     }
     $self->{schools} = \%schools;
