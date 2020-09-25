@@ -227,9 +227,9 @@ sub what_has_changed {
     my $dsbs = shift;
     my %changed;
     foreach my $dsb (@$dsbs) {
-	my ($current,$previous,$test1,$test2) = find_csv(dsb_to_dir($dsb));
-	#	my @diffs = calculate_diff($previous,$current);
-	my @diffs = calculate_diff($test1||$previous,$current);
+	my ($current,$previous) = find_csv(dsb_to_dir($dsb));
+	next unless $current && $previous;
+	my @diffs = calculate_diff($previous,$current);
 	$changed{$dsb->district} = \@diffs if @diffs;
     }
     return \%changed;
