@@ -11,7 +11,7 @@ chdir "$Bin/..";   # go up one level from where we are stored
 my $scrapedir = SCRAPEDIR;
 mkdir $scrapedir unless -e $scrapedir;
 
-my $ts = DateTime->now(time_zone=>'local')->set_time_zone('floating');
+my $ts = DateTime->now(time_zone=>'local')->set_time_zone('floating')->strftime('%Y-%m-%dT%H%M');
 
 system "./script/scrapeSchools.pl       $scrapedir";
 system "./script/schoolScraperToHTML.pl $scrapedir > $scrapedir/SUMMARY-$ts.html";
