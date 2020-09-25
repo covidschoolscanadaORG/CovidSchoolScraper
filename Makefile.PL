@@ -22,6 +22,7 @@ my %WriteMakefileArgs = (
 	    'LWP'                => '0',
 	    'DateTime'           => '0',
 	    'Text::CSV'          => '0',
+	    'HTML::Escape'       => '0',
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'CovidSchools-SchoolScraper-*' },

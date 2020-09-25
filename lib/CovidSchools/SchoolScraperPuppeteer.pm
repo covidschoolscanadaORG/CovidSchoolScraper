@@ -57,6 +57,7 @@ END
 	$html .= $_;
     }
 
+    $self->timestamp(DateTime->now(time_zone=>'local')->set_time_zone('floating'));
     $self->parse($html);
     return 1;
 }

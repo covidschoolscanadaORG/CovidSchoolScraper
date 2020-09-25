@@ -10,6 +10,11 @@ use File::Basename 'basename','dirname';
 use File::Path 'make_path';
 use IO::Dir;
 
+use feature 'unicode_strings';
+use utf8;
+use open OUT => ":encoding(UTF-8)";
+use open IN =>  ":encoding(UTF-8)";
+
 my $DATADIR = shift or die "Usage: scrapeSchools.pl <destination directory>";
 
 my @s = CovidSchools::SchoolScraper->board_subclasses;
@@ -17,7 +22,6 @@ for my $subclass (@s) {
     eval "use $subclass; 1" or die $@;
     my $dsb = $subclass->new();
     my $dest_file = scrape_and_save($dsb);
-    generate_diff($dest_file);
 }
 
 exit 0;
@@ -27,7 +31,7 @@ sub scrape_and_save {
     $dsb->scrape();
 
     my $dest_file = dest_csv_path($dsb);
-    open my $fh,'>',"$dest_file" or die "$dest_file: $!";
+    open my $fh,'>:encoding(UTF-8)',"$dest_file" or die "$dest_file: $!";
     print $fh $dsb->csv;
     close $fh                    or die "$dest_file: $!";
     return $dest_file;
@@ -73,6 +77,7 @@ sub dest_csv_path {
     my $date = DateTime->now(time_zone=>'local')->set_time_zone('floating');
 
     my $dest_dir = "$DATADIR/".$dsb->district;
+    $dest_dir    =~ s/\s+/_/g;
     make_path($dest_dir) or die "Couldn't create path to $dest_dir: $!"
 	unless -e $dest_dir;
 
