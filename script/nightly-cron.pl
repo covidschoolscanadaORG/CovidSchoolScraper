@@ -5,6 +5,7 @@ use FindBin '$Bin';
 use DateTime;
 use constant SCRAPEDIR=>'./scraped_data';
 use constant DESTINATION=>'dropbox:SchoolBoard_daily_snapshot';
+# use constant DESTINATION=>'dsb_snapshots:';
 
 chdir "$Bin/..";   # go up one level from where we are stored
 my $scrapedir = SCRAPEDIR;
@@ -14,6 +15,6 @@ my $ts = DateTime->now(time_zone=>'local')->set_time_zone('floating');
 
 system "./script/scrapeSchools.pl       $scrapedir";
 system "./script/schoolScraperToHTML.pl $scrapedir > $scrapedir/SUMMARY-$ts.html";
-#system "rclone copy $scrapedir ".DESTINATION;
+system "rclone copy $scrapedir ".DESTINATION;
 
 exit 0;
