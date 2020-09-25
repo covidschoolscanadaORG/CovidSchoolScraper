@@ -10,6 +10,7 @@ use File::Basename 'dirname','basename';
 use DateTime;
 use utf8;
 use feature 'unicode_strings';
+use Encode;
 use Carp 'croak';
 
 # unsuccessful attempt to get rid of weird HTML characters
@@ -147,16 +148,22 @@ sub scrape {
 	return;
     }
 
+    $self->timestamp(DateTime->now(time_zone=>'local')->set_time_zone('floating'));
+
     #    $self->parse(decode('utf8',uri_unescape($res->content)));
     $self->parse($res->content);
+}
+
+sub timestamp {
+    my $self = shift;
+    $self->{timestamp} = shift if @_;
+    $self->{timestamp};
 }
 
 sub parse {
     my $self = shift;
     my $html_data = shift;
 
-#     $self->clean_html_text(\$html_data);   # get rid of wide characters (yuck)
-    
     $self->{raw_content} = $html_data;
     my $te = $self->create_extractor();
 
@@ -181,19 +188,21 @@ sub create_extractor {
     HTML::TableExtract->new(headers      => $self->column_headers,
 			    keep_headers => 1,
 			    debug        => 0,
+			    decode       => 0,
 	);
 }
 
-=head2 $ss->clean_html_text(\$text)
+=head2 $ss->clean_text(\$text)
 
 Removes wide characters from HTML text. Pass a scalar ref.
 
 =cut
 
-sub clean_html_text {
+# do nothing here
+sub clean_text {
     my $self = shift;
     my $text = shift;
-    $$text  =~ s/[^\x00-\x7f]//g;
+    # nothing
 }
 
 =head2 @schools = $ss->schools
@@ -279,7 +288,7 @@ Returns the file header string which identifies the time, date and source of the
 
 sub header {
     my $self = shift;
-    my $date = DateTime->now(time_zone=>'local')->set_time_zone('floating');
+    my $date = $self->timestamp;
     my $url  = $self->url;
     my $d   = '';
     $d     .= "# district: ".$self->district."\n";
@@ -320,12 +329,14 @@ sub _create_school_data_structure {
 	# remove extraneous leading & trailing chars (don't know what causes this)
 	foreach (@$row) {
 	    next unless defined $_;
+	    $_ = Encode::decode('UTF-8',$_);
 	    s/[\r\n]+/ /g;     # no newlines please!
 	    s/[\x00-\x1F]//g;  # no control characters
 	    s/\s{2,}/ /g;      # no redundant white space
 	    s/^\s+//g;         # no whitespace at beginning
 	    s/\s+$//g;         # no whitespace at end
 	    s/,//g;            # no commas!
+	    $self->clean_text(\$_);
 	}
 
 	unless ($self->{parsed_headers}) { # first row

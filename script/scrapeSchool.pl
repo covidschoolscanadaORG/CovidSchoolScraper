@@ -5,9 +5,11 @@ use FindBin '$Bin';
 use lib "$Bin/../lib";
 use CovidSchools::SchoolScraper;
 
-# unsuccessful attempt to get rid of weird chars
-# use feature 'unicode_strings';
-# binmode STDOUT,":encoding(UTF-8)";
+use utf8;
+use feature 'unicode_strings';
+use open OUT => ":encoding(UTF-8)";
+use open IN =>  ":encoding(UTF-8)";
+binmode(STDOUT,":encoding(UTF-8)");
 
 my $subclass = shift || print_error_message_and_die();
 
@@ -16,8 +18,6 @@ eval "use CovidSchools::SchoolScraper::$subclass; 1" or die "Can't load class $s
 my $ss = "CovidSchools::SchoolScraper::$subclass"->new();
 $ss->scrape() or die $ss->error;
 print $ss->csv,"\n";
-# print $ss->raw_content,"\n";
-
 
 exit 0;
 

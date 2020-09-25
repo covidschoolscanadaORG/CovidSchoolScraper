@@ -28,4 +28,11 @@ sub create_extractor {
 	);
 }
 
+sub clean_text {
+    my $self = shift;
+    my $text = shift;
+    $$text =~ s/[^\x00-\x7f]//g;
+}
+
+
 1;
