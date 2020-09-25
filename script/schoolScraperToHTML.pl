@@ -14,9 +14,7 @@ use Text::Diff;
 use Encode qw(decode encode);
 
 use feature 'unicode_strings';
-binmode STDOUT,":encoding(UTF-8)";
-# use open OUT=> ':encoding(UTF-8)';
-use open IN => ':encoding(UTF-8)';
+use open ':std'=>':encoding(UTF-8)';
 use utf8;
 
 my $DATADIR = shift or die "Usage: schoolScraperToHTML.pl <destination directory>";
@@ -76,7 +74,6 @@ if (%$changed) {
     print "<ol>\n";
     for my $district (sort keys %$changed) {
 	(my $d = $district) =~ s/\s+/_/g;
-	$d = decode('UTF-8',$d);    
 	my $tag   .= "${d}_changed";
 	print "<li><a href=\"#$tag\">$district</a></li>\n";
     }
@@ -90,9 +87,8 @@ print "<li><i><a href='#all'>Current Advisories</a></i></li>\n";
 print "<ol>\n";
 foreach (@dsbs) {
     my $district = $_->district;
-    $district    = decode('UTF-8',$district);
-    (my $tag      = $district) =~ s/\s+/_/g;
-    print "<li><a href='#$tag'>$district</a></li>\n";
+    my $tag      = title2tag($district);
+    print "<li><a href=\"#$tag\">$district</a></li>\n";
 }
 print "</ol>\n";
 print "</ul>\n";
@@ -100,7 +96,8 @@ print "</ul>\n";
 ################
 # changed advisories
 ################
-my $csv   = Text::CSV->new({binary=>1,
+my $csv   = Text::CSV->new({binary=>0,
+			    decode_utf8=>1,
 			    allow_loose_quotes=>1,
 			    allow_loose_escapes=>1,
 			    allow_unquoted_escape=>1,
@@ -110,16 +107,17 @@ my $csv   = Text::CSV->new({binary=>1,
 if (%$changed) {
     print "<hr><h1><a id='changed'>Schools with Recently Changed Advisories</a></h1>\n";
     for my $dsb (@dsbs) {
-	my $title = $dsb->district;
+	my $title  = $dsb->district;
 	my $source = $dsb->url;
 	next unless $changed->{$title};
-	(my $tag = $title) =~ s/\s+/_/g;
-	$tag    .= "_changed";
 	
 	my $comparison = shift @{$changed->{$title}};
 	my $headers    = shift @{$changed->{$title}};
 	
 	my @fields = csv_parse($csv,$headers);
+
+	(my $tag = $title) =~ s/\s+/_/g;
+	$tag    .= "_changed";
 	
 	print "<h2><a id=\"$tag\" href=\"$source\">$title</a> ($comparison)</h2>\n";
 	
@@ -135,7 +133,7 @@ if (%$changed) {
 		$style='alert';
 	    }
 	    print "<tr class='$style'>";
-	    print map {s/[\x00-\x1F]//g;"<td>$_</td>"} @fields;
+	    print map {s/[\x00-\x1F]//g;"<td>$_</td>"} map {decode('UTF-8'=>$_)} @fields;
 	    print "</tr>\n";
 	}
 	print "</table>\n";
@@ -147,7 +145,7 @@ if (%$changed) {
 ################
 print "<h1><a id='all'>All Advisories</a></h1>\n";
 for my $district (@dsbs) {
-    my $path = dsb_to_dir($district);
+    my $path      = dsb_to_dir($district);
     my @csv_files = find_csv($path);
     csv_2_html($csv_files[0]);
 }
@@ -159,7 +157,7 @@ exit 0;
 
 sub csv_parse {
     my ($csv,$string) = @_;
-    return $csv->fields() if $csv->parse();
+    return $csv->fields() if $csv->parse($string);
     return split /,/,$string;
 }
 
@@ -171,8 +169,8 @@ sub dsb_to_dir {
 
 sub csv_2_html {
     my $file = shift;
-    my $aoa  = csv(in=>$file,
-		   encoding=>'UTF-8',
+    my $aoa  = csv(in       => $file,
+		   encoding => 'UTF-8',
 	);
 
     my ($title,$source,$date,$ready_for_data,$header,$count);
@@ -194,13 +192,14 @@ sub csv_2_html {
 	}
 
 	if (!$ready_for_data++ && $title && $source && $date) {
-	    $title = decode('UTF-8',$title);
-	    my $tag = title2tag($title);
-	    print "<h2><a id=\"$tag\" href=\"$source\">$title</a> ($date)</h2>\n";
+	    my $t   = decode('UTF-8'=>$title);
+	    my $tag = title2tag($t);
+	    print "<h2><a id=\"$tag\" href=\"$source\">$t</a> ($date)</h2>\n";
 	    $ready_for_data++;
 	}
 
 	my @fields = @$row;
+	foreach (@fields) {s/&nbsp;//}
 	unless ($header++) {
 	    print "<table><tr class='header'>\n";
 	    print map {"<th>$_</th>"} @fields;

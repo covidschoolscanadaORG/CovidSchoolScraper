@@ -121,7 +121,7 @@ sub table_fields {
 =cut
 
 sub district {
-    shift->{district}
+    decode('UTF-8'=>shift->{district});
 }
 
 =head2 $ss->url
