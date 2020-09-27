@@ -50,7 +50,7 @@ tr.even {
     text-decoration: line-through;
 }
 .alert {
-    background-color: orange;
+    background-color: darkorange;
 </style>
 <meta charset="UTF-8">
 </head>
@@ -133,9 +133,11 @@ END
 		$style='strikethrough';
 	    } elsif ($fields[0] =~ s/^\+//) {
 		$style='alert';
+	    } else {
+		$style='alert';
 	    }
 	    print "<tr class='$style'>";
-	    print map {s/[\x00-\x1F]//g;"<td>$_</td>"} map {decode('UTF-8'=>$_)} @fields;
+	    print map {s/[\x00-\x1F]//g;"<td class='$style'>$_</td>"} map {decode('UTF-8'=>$_)} @fields;
 	    print "</tr>\n";
 	}
 	print "</table>\n";
