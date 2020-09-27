@@ -31,41 +31,32 @@ my $changed = what_has_changed(\@dsbs);
 my $localtime = localtime();
 
 print <<END;
-<!DOCTYPE html>
+---
+layout: page
+Title: COVID-19 School Advisories $DATE
+---
+
 <html>
 <head>
 <title>COVID-19 School Advisories $DATE</title>
 <style>
-body {background-color: seashell; }
-html {font-family: "Arial" !important; }
-table, th, td {
-    border: 1px solid gray;
-    border-collapse: collapse;
-}
-tr.header {
-    background-color: black;
-    color: white;
-}
 tr.odd {
     background-color: wheat;
 }
 tr.even {
     background-color: powderblue;
 }
-tr.strikethrough {
-    background-color: wheat;
+.strikethrough {
     text-decoration: line-through;
 }
-tr.alert {
-    background-color: red;
-}
+.alert {
+    background-color: orange;
 </style>
 <meta charset="UTF-8">
 </head>
 <body> 
 <div>
 <h1>Summary of School COVID-19 Alerts, updated $localtime</h1>
-<h2>Contents</h2>
 END
     ;
 
@@ -108,7 +99,15 @@ my $csv   = Text::CSV->new({binary=>0,
 			   });
 
 if (%$changed) {
-    print "<hr><h1><a id='changed'>Schools with Recently Changed Advisories</a></h1>\n";
+    print <<END;
+<hr><h2 id='changed'>Schools with Recently Changed Advisories</h2>
+<div style="padding-left: 50px">
+<p><span class="strikethrough">Previous day's numbers</span><br/>
+<span class="alert">Current day's numbers</span></p>
+</div>
+END
+	;
+
     for my $dsb (@dsbs) {
 	my $title  = $dsb->district;
 	my $source = $dsb->url;
@@ -122,7 +121,7 @@ if (%$changed) {
 	(my $tag = $title) =~ s/\s+/_/g;
 	$tag    .= "_changed";
 	
-	print "<h2><a id=\"$tag\" href=\"$source\">$title</a> ($comparison)</h2>\n";
+	print "<h3 id=\"$tag\" href=\"$source\">$title ($comparison)</h3>\n";
 	
 	print "<table><tr class='header'>\n";
 	print map {s/[\x00-\x1F]//g;"<th>$_</th>"} @fields;
@@ -147,7 +146,7 @@ if (%$changed) {
 # all advisories
 ################
 print "<hr>\n";
-print "<h1><a id='all'>All Advisories</a></h1>\n";
+print "<h2 id='all'>All Advisories</h2>\n";
 for my $district (@dsbs) {
     my $path      = dsb_to_dir($district);
     my @csv_files = find_csv($path);
@@ -196,9 +195,10 @@ sub csv_2_html {
 	}
 
 	if (!$ready_for_data++ && $title && $source && $date) {
-	    my $t   = decode('UTF-8'=>$title);
+	    #	    my $t   = decode('UTF-8'=>$title);
+	    my $t = $title;
 	    my $tag = title2tag($t);
-	    print "<h2><a id=\"$tag\" href=\"$source\">$t</a> ($date)</h2>\n";
+	    print "<h2 id=\"$tag\" href=\"$source\">$t ($date)</h2>\n";
 	    $ready_for_data++;
 	}
 
