@@ -6,6 +6,8 @@ use lib "$Bin/../lib";
 use IO::Dir;
 use File::Copy;
 use File::Basename 'basename';
+use Date::Parse;
+use DateTime;
 
 my $io_pages = shift || "$Bin/../../covidschoolscanada.github.io";
 -d $io_pages or die "io_pages/ in path";
@@ -46,13 +48,16 @@ for my $s (@summaries) {
     copy($s,"$daily_summaries/$basename") or die "Copy failed: $!";
     (my $link_name = $basename) =~ s/^SUMMARY-//;
     $link_name                  =~ s/T\d.+$//;
-    print $fh "1. [$link_name]($basename)\n";
+    my $dow                     = find_dow($link_name);
+    print $fh "1. [$link_name ($dow)]($basename)\n";
 }
 
 close $fh or die "Error while closing index.md: $!";
 exit 0;
 
 
-
-
-
+sub find_dow {
+    my $ts  = str2time(shift);
+    my $dow = DateTime->from_epoch(epoch=>$ts,time_zone=>'local')->set_time_zone('floating')->day_of_week;
+    return (('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')[$dow]);
+}

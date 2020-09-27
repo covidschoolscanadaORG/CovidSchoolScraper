@@ -6,6 +6,7 @@ use lib "$Bin/../lib";
 
 use CovidSchools::SchoolScraper;
 use DateTime;
+use Date::Parse;
 use File::Basename 'basename','dirname';
 use File::Path 'make_path';
 use IO::Dir;
@@ -121,7 +122,7 @@ END
 	(my $tag = $title) =~ s/\s+/_/g;
 	$tag    .= "_changed";
 	
-	print "<h3 id=\"$tag\" href=\"$source\">$title ($comparison)</h3>\n";
+	print "<a id=\"$tag\" href=\"$source\"><h3>$title ($comparison)</h3></a>\n";
 	
 	print "<table><tr class='header'>\n";
 	print map {s/[\x00-\x1F]//g;"<th>$_</th>"} @fields;
@@ -200,7 +201,8 @@ sub csv_2_html {
 	    #	    my $t   = decode('UTF-8'=>$title);
 	    my $t = $title;
 	    my $tag = title2tag($t);
-	    print "<h2 id=\"$tag\" href=\"$source\">$t ($date)</h2>\n";
+	    my $nice_date = nice_date($date);
+	    print "<a id=\"$tag\" href=\"$source\"><h3>$t ($nice_date)</h3></a>\n";
 	    $ready_for_data++;
 	}
 
@@ -259,7 +261,7 @@ sub calculate_diff {
 	my $prev = basename($previous);
 	my $cur  = basename($current);
 	foreach ($prev,$cur) { s/\.csv$//; }
-	unshift @changes,"$prev vs. $cur";
+	unshift @changes,nice_date($cur) . ' vs '.nice_date($prev);
     }
     return @changes;
 }
@@ -287,6 +289,12 @@ sub find_csv {
     }
 
     return sort {$mtime{$b} <=> $mtime{$a}}  keys %mtime;
+}
+
+sub nice_date {
+    my $ts  = str2time(shift);
+    my $nice_date = DateTime->from_epoch(epoch=>$ts)->strftime('%a %b %d, %Y');
+    return $nice_date;
 }
 
 __END__
