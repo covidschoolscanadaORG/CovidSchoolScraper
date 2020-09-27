@@ -1,4 +1,4 @@
-package CovidSchools::SchoolScraper::durhamPeelCatholicDSB;
+package CovidSchools::SchoolScraper::dufferinPeelCatholicDSB;
 
 use 5.006;
 use strict;
@@ -8,7 +8,7 @@ use base 'CovidSchools::SchoolScraper';
 sub new {
     my $class = shift;
     return $class->SUPER::new(
-	DISTRICT => 'Durham-Peel Catholic DSB',
+	DISTRICT => 'Dufferin-Peel Catholic DSB',
 	URL      => 'https://www3.dpcdsb.org/news/news-archives/community-advisory-reporting',
 	);
 }

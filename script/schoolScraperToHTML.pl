@@ -28,6 +28,8 @@ my @dsbs = map {
 # calculate what has changed
 my $changed = what_has_changed(\@dsbs);
 
+my $localtime = localtime();
+
 print <<END;
 <!DOCTYPE html>
 <html>
@@ -62,7 +64,8 @@ tr.alert {
 </head>
 <body> 
 <div>
-<h1>Contents</h1>
+<h1>Summary of School COVID-19 Alerts, updated $localtime</h1>
+<h2>Contents</h2>
 END
     ;
 
@@ -143,6 +146,7 @@ if (%$changed) {
 ################
 # all advisories
 ################
+print "<hr>\n";
 print "<h1><a id='all'>All Advisories</a></h1>\n";
 for my $district (@dsbs) {
     my $path      = dsb_to_dir($district);
