@@ -16,8 +16,10 @@ sub new {
 sub table_fields {
     return (
 	'ÉCOLE',
-	'CAS ACTIFS',
-	'TOTAL DES CAS ACTIFS',
+	'CONSEIL SCOLAIRE',
+	'FERMETURE \(',
+	'AVIS DE FERMETURE',
+	'VOCATION DE FERMETURE',
 	   );   
 }
     1;
