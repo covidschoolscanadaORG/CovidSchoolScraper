@@ -324,38 +324,38 @@ sub _create_school_data_structure {
     my @fields = @{$self->column_headers};
     shift @fields;  # get rid of the first column - school
     my %schools;
-    for my $row ($te->rows) {
+    for my $table ($te->tables) {
+	for my $row ($table->rows) {
 
-	# remove extraneous leading & trailing chars (don't know what causes this)
-	foreach (@$row) {
-	    next unless defined $_;
-	    $_ = Encode::decode('UTF-8',$_);
-	    s/[\r\n]+/ /g;     # no newlines please!
-	    s/[\x00-\x1F]//g;  # no control characters
-	    s/\s{2,}/ /g;      # no redundant white space
-	    s/^\s+//g;         # no whitespace at beginning
-	    s/\s+$//g;         # no whitespace at end
-	    s/,//g;            # no commas!
-	    $self->clean_text(\$_);
-	}
+	    # remove extraneous leading & trailing chars (don't know what causes this)
+	    foreach (@$row) {
+		next unless defined $_;
+		$_ = Encode::decode('UTF-8',$_);
+		s/[\r\n]+/ /g;     # no newlines please!
+		s/[\x00-\x1F]//g;  # no control characters
+		s/\s{2,}/ /g;      # no redundant white space
+		s/^\s+//g;         # no whitespace at beginning
+		s/\s+$//g;         # no whitespace at end
+		s/,//g;            # no commas!
+		$self->clean_text(\$_);
+	    }
 
-	unless ($self->{parsed_headers}) { # first row
+	    unless ($self->{parsed_headers}) { # first row
 	    $self->{parsed_headers} = $row;
 	    next;
-	}
+	    }
+
 	    
-	my ($school,@data) = @$row;
-	next unless $school;
+	    my ($school,@data) = @$row;
+	    next unless $school;
 
-	# stupid workaround for broken Greater Essex school
-	while (@data > @fields) {
-	    push @fields,'<undefined>';
+	    # stupid workaround for broken Greater Essex school
+	    while (@data > @fields) {
+		push @fields,'<undefined>';
+	    }
+	    
+	    @{$schools{$school}}{@fields} = @data;
 	}
-
-	@{$schools{$school}}{@fields} = @data;
-
-	
-
     }
     $self->{schools} = \%schools;
 }
