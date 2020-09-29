@@ -8,7 +8,7 @@ use base 'CovidSchools::SchoolScraper';
 sub new {
     my $class = shift;
     return $class->SUPER::new(
-	DISTRICT => 'CECCE',
+	DISTRICT => 'Écoles catholiques Centre-Est (CECCE)',
 	URL      => 'https://www.ecolecatholique.ca/fr/Cas-De-Covid19_379',
 	);
 }

@@ -17,9 +17,8 @@ sub table_fields {
     return (
 	'ÉCOLE',
 	'CONSEIL SCOLAIRE',
-	'FERMETURE \(',
-	'AVIS DE FERMETURE',
-	'VOCATION DE FERMETURE',
-	   );   
+	'DATE',
+	'DATE',
+	);   
 }
     1;

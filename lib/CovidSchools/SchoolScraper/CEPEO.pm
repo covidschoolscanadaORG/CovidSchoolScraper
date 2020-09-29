@@ -18,6 +18,7 @@ sub table_fields {
     return (
 	'Écoles',
 	'Cas actifs',
+	'Cas actifs',
 	'Classes fermées',
 	'Cohortes fermées',
 	'Écoles fermées',

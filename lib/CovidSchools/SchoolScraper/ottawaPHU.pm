@@ -13,4 +13,17 @@ sub new {
 	);
 }
 
+# filter out non-schools
+sub csv {
+    my $self = shift;
+    
+    my $csv = '';
+    $csv   .= $self->header;
+    my $table = $self->{raw_content};
+    $table    =~ s/,\s*$//gm;  # remove pesky trailing commas
+    my @rows  = grep {/school|Facility Type/i} split "\n",$table;
+    $csv .= join "\n",@rows;
+    $csv;
+}
+
 1;

@@ -117,7 +117,7 @@ END
 	my $comparison = shift @{$changed->{$title}};
 	my $headers    = shift @{$changed->{$title}};
 	
-	my @fields = csv_parse($csv,$headers);
+	my @headers = csv_parse($csv,$headers);
 
 	(my $tag = $title) =~ s/\s+/_/g;
 	$tag    .= "_changed";
@@ -125,11 +125,11 @@ END
 	print "<a id=\"$tag\" href=\"$source\"><h3>$title ($comparison)</h3></a>\n";
 	
 	print "<table><tr class='header'>\n";
-	print map {s/[\x00-\x1F]//g;"<th>$_</th>"} @fields;
+	print map {s/[\x00-\x1F]//g;"<th>$_</th>"} @headers;
 	print "</tr>\n";
 	my $style;
 	foreach (@{$changed->{$title}}) {
-	    @fields = csv_parse($csv,$_);
+	    my @fields = csv_parse($csv,$_);
 	    if ($fields[0] =~ s/^-//) {
 		$style='strikethrough';
 	    } elsif ($fields[0] =~ s/^\+//) {
@@ -138,7 +138,7 @@ END
 		$style='alert';
 	    }
 	    print "<tr class='$style'>";
-	    print map {s/[\x00-\x1F]//g;"<td class='$style'>$_</td>"} map {decode('UTF-8'=>$_)} @fields;
+	    print map {s/[\x00-\x1F]//g;"<td class='$style'>$_</td>"} map {decode('UTF-8'=>$_)} @fields[0..$#headers]; # trim trailing fields without headers
 	    print "</tr>\n";
 	}
 	print "</table>\n";
@@ -152,7 +152,7 @@ print "<hr>\n";
 print "<h2 id='all'>All Advisories</h2>\n";
 for my $district (@dsbs) {
     my $path      = dsb_to_dir($district);
-    my @csv_files = find_csv($path);
+    my @csv_files = find_csv($path) or next;
     csv_2_html($csv_files[0]);
 }
 ##############
@@ -180,6 +180,8 @@ sub csv_2_html {
 	);
 
     my ($title,$source,$date,$ready_for_data,$header,$count);
+    my @headers;
+    
     for my $row (@$aoa) {
 
 	if ($row->[0] =~ /^\# district: (.+)/) {
@@ -206,11 +208,13 @@ sub csv_2_html {
 	    $ready_for_data++;
 	}
 
+
 	my @fields = @$row;
 	foreach (@fields) {s/&nbsp;//}
-	unless ($header++) {
+	unless (@headers) {
+	    @headers = @fields;
 	    print "<table><tr class='header'>\n";
-	    print map {"<th>$_</th>"} @fields;
+	    print map {"<th>$_</th>"} @headers;
 	    print "</tr>\n";
 	    next;
 	}
@@ -218,7 +222,7 @@ sub csv_2_html {
 	my $class = $odd ? 'odd' : 'even';
 	    
 	print "<tr class='$class'>\n";
-	print map {s/\s+$//; "<td>$_</td>"} @fields;
+	print map {s/\s+$//; "<td>$_</td>"} @fields[0..$#headers];
 	print "</tr>\n";
     }
     print "</table>\n";
@@ -279,7 +283,7 @@ sub get_row_headers {
 
 sub find_csv {
     my $dir = shift;
-    my $d   = IO::Dir->new($dir);
+    my $d   = IO::Dir->new($dir) or return;
 
     my %mtime;
     while (defined($_ = $d->read)) {
