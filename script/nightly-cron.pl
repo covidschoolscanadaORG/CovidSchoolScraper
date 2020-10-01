@@ -21,7 +21,10 @@ system "./script/update-covidschoolscanada-io.pl",GITHUBIO;
 chdir "../covidschoolscanada.github.io";
 system "git add daily_reports";
 system "git commit -a -m'daily advisory update, $ts'";
+
+# the git push isn't happening, unsure why.
+# try sleeping a little bit in case there is some locking issue.
+sleep 5;
 system "git push";
-#system "rclone copy $scrapedir ".DESTINATION;
 
 exit 0;
