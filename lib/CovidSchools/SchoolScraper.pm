@@ -337,6 +337,7 @@ sub _create_school_data_structure {
 		s/^\s+//g;         # no whitespace at beginning
 		s/\s+$//g;         # no whitespace at end
 		s/,//g;            # no commas!
+		s/\&nbsp;//g;      # get rid of the nonbreaking spaces
 		$self->clean_text(\$_);
 	    }
 
