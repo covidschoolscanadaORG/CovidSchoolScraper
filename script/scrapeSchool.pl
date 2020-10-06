@@ -13,7 +13,7 @@ use open ':std',IN =>  ":encoding(UTF-8)";
 
 my $subclass = shift || print_error_message_and_die();
 
-eval "use CovidSchools::SchoolScraper::$subclass; 1" or die "Can't load class $subclass";
+eval "use CovidSchools::SchoolScraper::$subclass; 1" or die "Can't load class $subclass: $@";
 
 my $ss = "CovidSchools::SchoolScraper::$subclass"->new();
 $ss->scrape() or die $ss->error;

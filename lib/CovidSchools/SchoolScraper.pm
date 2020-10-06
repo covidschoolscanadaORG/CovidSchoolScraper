@@ -322,7 +322,7 @@ sub _create_school_data_structure {
     my $te   = shift;
 
     my @fields = @{$self->column_headers};
-    shift @fields;  # get rid of the first column - school
+    my $school_header = shift @fields;  # get rid of the first column - school
     my %schools;
     for my $table ($te->tables) {
 	for my $row ($table->rows) {
@@ -349,6 +349,8 @@ sub _create_school_data_structure {
 	    
 	    my ($school,@data) = @$row;
 	    next unless $school;
+	    next if $school =~ /$school_header/;  # ignore repeated header rows
+	    next unless length $data[0] > 0;
 
 	    # stupid workaround for broken Greater Essex school
 	    while (@data > @fields) {

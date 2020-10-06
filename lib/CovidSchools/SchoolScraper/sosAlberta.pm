@@ -21,7 +21,7 @@ sub table_fields {
 	'Town',
 	'Range',
 	'Report',
-	'Cases',
+	'To Date',
 	'AHS',
 	'School Division',
 	'Status',
