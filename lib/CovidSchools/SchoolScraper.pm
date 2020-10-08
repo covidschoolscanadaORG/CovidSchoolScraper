@@ -38,16 +38,6 @@ Scrape COVID case numbers from school board web sites
     use CovidSchools::SchoolScraper;
     my $ss  = CovidSchools::SchoolScraper::subclass->new();
     $ss->scrape() or die "Couldn't scrape ",$ss->error_str;
-    my @schools = $ss->schools();
-    my @table_fields = $ss->table_fields();
-    for my $sch (@schools) {
-       print $school,"\n";
-       for my $field (@table_fields) {
-           print "\t",$ss->school($sch){$field},"\n";
-       }
-    }
-
-    # may or may not be appropriate...
     $html = $ss->raw_content;
     $csv  = $ss->csv;
 
@@ -79,8 +69,9 @@ sub new {
 
 =head2 $ss->column_headers(@array)
 
-Set the column headers to look for as an array. Must correspond to table headers used for {school, confirmed cases, closed classrooms, closed school}
+Set the column headers to search for as an array. 
 
+Must correspond to table headers used for {school, confirmed cases, closed classrooms, closed school}
 Used without arguments returns ref to the array of headers. Headers may be regular expressions
 
 =cut
@@ -98,9 +89,8 @@ sub column_headers {
 
 =head2 $array_ref = $ss->table_fields
 
-Return a list of HTML table headers, e.g.
+This subclassable method returns the fields that go into column_headers.
   
-
   sub table_fields { 
       return ('School','Confirmed Cases','Closed Classroom', 'Closed School')
   }
@@ -177,6 +167,17 @@ sub parse {
     return 1;
 }
 
+=head2 $headers = $ss->parsed_headers
+
+After parsing the table, the literal row headers will be returned by
+this method as an array ref. These are used for generating the CSV
+
+=cut
+
+sub parsed_headers {
+    return shift->{parsed_headers};
+}
+
 =head2 $extractor = $self->create_extractor()
 
 Return a properly initialized. HTML::TableExtract object
@@ -203,43 +204,6 @@ sub clean_text {
     my $self = shift;
     my $text = shift;
     # nothing
-}
-
-=head2 @schools = $ss->schools
-
-Return array of school names in district
-
-=cut
-
-sub schools {
-    my $self = shift;
-    $self->{schools} or return;
-    return sort keys %{$self->{schools}};
-}
-
-=head2 $school_hash = $ss->school($school_name);
-
-Returns a hashref corresponding to the named school. Keys are the table fields
-defined by table_fields() method.
-
-=cut
-
-sub school {
-    my $self = shift;
-    my $school_name = shift;
-    $self->{schools} or return;
-    return $self->{schools}{$school_name};
-}
-
-=head2 $headers = $ss->parsed_headers
-
-After parsing the table, the literal row headers will be returned by
-this method as an array ref. These are used for generating the CSV
-
-=cut
-
-sub parsed_headers {
-    return shift->{parsed_headers};
 }
 
 =head2 $content = $ss->raw_content
