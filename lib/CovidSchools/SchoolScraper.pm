@@ -8,6 +8,7 @@ use LWP;
 use HTML::TableExtract;
 use File::Basename 'dirname','basename';
 use DateTime;
+use Text::CSV;
 use utf8;
 use feature 'unicode_strings';
 use Encode;
@@ -187,7 +188,7 @@ Return a properly initialized. HTML::TableExtract object
 sub create_extractor {
     my $self = shift;
     HTML::TableExtract->new(headers      => $self->column_headers,
-			    keep_headers => 1,
+			    keep_headers => 0,
 			    debug        => 0,
 			    decode       => 0,
 	);
@@ -225,23 +226,12 @@ Returns a comma-separated-values version of the school closure table.
 
 sub csv {
     my $self = shift;
-
-    # sigh, more cleanup...
-    my ($school,@fields) = $self->table_fields;
-    my $literal_headers  = $self->parsed_headers() || [$school,@fields];
-
-    no warnings 'uninitialized';
-    
+    my $headers = $self->parsed_headers;
+    my $rows    = $self->{table};
+    my $aoa     = [$headers,@$rows];
     my $csv = '';
-    $csv   .= $self->header;
-    $csv   .= join (',',@$literal_headers)."\n";
-    for my $sch ($self->schools) {
-	$csv .= join(',',
-		     $sch,
-		     @{$self->school($sch)}{@fields,'<undefined>'}, # for stupid Greater Essex bug that I don't have patience to fix right
-		     ). "\n";
-    }
-    return $csv;
+    Text::CSV::csv(in=>$aoa,out=>\$csv,encoding=>'utf-8');
+    return $self->header.$csv;
 }
 
 =head2 $header = $ss->header;
@@ -285,10 +275,13 @@ sub _create_school_data_structure {
     my $self = shift;
     my $te   = shift;
 
-    my @fields = @{$self->column_headers};
-    my $school_header = shift @fields;  # get rid of the first column - school
-    my %schools;
+    my @table;
     for my $table ($te->tables) {
+
+	unless ($self->{parsed_headers}) { # first row
+	    $self->{parsed_headers} = [$table->hrow()];
+	}
+
 	for my $row ($table->rows) {
 
 	    # remove extraneous leading & trailing chars (don't know what causes this)
@@ -304,27 +297,10 @@ sub _create_school_data_structure {
 		s/\&nbsp;//g;      # get rid of the nonbreaking spaces
 		$self->clean_text(\$_);
 	    }
-
-	    unless ($self->{parsed_headers}) { # first row
-	    $self->{parsed_headers} = $row;
-	    next;
-	    }
-
-	    
-	    my ($school,@data) = @$row;
-	    next unless $school;
-	    next if $school =~ /$school_header/;  # ignore repeated header rows
-	    next unless length $data[0] > 0;
-
-	    # stupid workaround for broken Greater Essex school
-	    while (@data > @fields) {
-		push @fields,'<undefined>';
-	    }
-	    
-	    @{$schools{$school}}{@fields} = @data;
+	    push @table,$row;
 	}
     }
-    $self->{schools} = \%schools;
+    $self->{table} = \@table;
 }
 
 =head2 $ua = $self->new_user_agent()
