@@ -22,9 +22,8 @@ chdir "../covidschoolscanada.github.io";
 system "git add daily_reports";
 system "git commit -a -m'daily advisory update, $ts'";
 
-# the git push isn't happening, unsure why.
-# try sleeping a little bit in case there is some locking issue.
-sleep 5;
+# for git push to work, need to have the ssh-user-agent environment variable set
+# correctly. otherwise it fails for lack of credentials
 system "git push";
 
 exit 0;

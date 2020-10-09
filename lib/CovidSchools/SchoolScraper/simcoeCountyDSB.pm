@@ -13,6 +13,14 @@ sub new {
 	);
 }
 
+sub clean_text {
+    my $self = shift;
+    my $t    = shift;
+    $self->SUPER::clean_text($t);
+    $$t =~ s/&nbsp;/ /g;
+    $$t =~ s/\s+/ /g;
+}
+
 sub table_fields {
     return ('Site',
 	    'Confirmed',

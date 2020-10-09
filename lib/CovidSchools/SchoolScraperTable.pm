@@ -20,21 +20,15 @@ sub parse {
     $self->{raw_content} = decode('UTF-8',$content);
     my $array_of_array   = Text::CSV::csv(in=>\$content);
 
-    my (%schools,@fields);
+    my @table;
     for my $row (@$array_of_array) {
 	unless ($self->{parsed_headers}) { # first row
 	    $self->{parsed_headers} = $row;
-	    @fields                 = @$row;
-	    shift @fields;
 	    next;
 	}
-	    
-	my ($school,@data) = @$row;
-	next unless $school;
-	@{$schools{$school}}{@fields} = @data;
-
+	push @table,$row;
     }
-    $self->{schools} = \%schools;
+    $self->{table} = \@table;
 }
 
 # this does nothing but add the timestamp to the CSV table downloaded from Google

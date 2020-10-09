@@ -13,6 +13,13 @@ sub new {
 	);
 }
 
+sub parsed_headers {
+    ['School Name',
+     'Active Confirmed Student Cases of COVID-19',
+     'Active Confirmed Staff Cases of COVID-19',
+     'Status']
+}
+
 sub table_fields {
     return (
 	'School Name',

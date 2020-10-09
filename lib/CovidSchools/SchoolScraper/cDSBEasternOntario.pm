@@ -17,13 +17,14 @@ sub table_fields {
     return ('School Name',
 	    'Date',
 	    'Number of Cases',
+	    'School Closure',
 	   );   
 }
 
 sub create_extractor {
     my $self = shift;
     HTML::TableExtract->new(headers      => $self->column_headers,
-			    keep_headers => 1,
+			    keep_headers => 0,
 			    debug        => 0,
 			    decode       => 1,
 	);

@@ -141,7 +141,7 @@ sub scrape {
 
     $self->timestamp(DateTime->now(time_zone=>'local')->set_time_zone('floating'));
 
-    #    $self->parse(decode('utf8',uri_unescape($res->content)));
+
     $self->parse($res->content);
 }
 
@@ -196,15 +196,17 @@ sub create_extractor {
 
 =head2 $ss->clean_text(\$text)
 
-Removes wide characters from HTML text. Pass a scalar ref.
+Cleans up newlines and other nonsense
 
 =cut
 
-# do nothing here
 sub clean_text {
     my $self = shift;
     my $text = shift;
-    # nothing
+    return unless defined $$text;
+    $$text   =~ s/[\r\n]/ /g;
+    $$text   =~ s/^\s+//;
+    $$text   =~ s/\s+$//;
 }
 
 =head2 $content = $ss->raw_content
@@ -230,7 +232,12 @@ sub csv {
     my $rows    = $self->{table};
     my $aoa     = [$headers,@$rows];
     my $csv = '';
-    Text::CSV::csv(in=>$aoa,out=>\$csv,encoding=>'utf-8');
+    for my $row (@$aoa) {
+	my @data  = map {  defined ? (/[,\s]/ ? "\"$_\"" : $_)
+			       : '' } @$row;
+	foreach (@data) {$self->clean_text(\$_)};
+	$csv     .= join(",",@data)."\n";
+    }
     return $self->header.$csv;
 }
 
@@ -279,7 +286,11 @@ sub _create_school_data_structure {
     for my $table ($te->tables) {
 
 	unless ($self->{parsed_headers}) { # first row
-	    $self->{parsed_headers} = [$table->hrow()];
+	    my @headers = map {decode('UTF-8'=>$_)} $table->hrow();
+	    foreach (@headers) {
+		$self->clean_text(\$_);
+	    }
+	    $self->{parsed_headers} = \@headers;
 	}
 
 	for my $row ($table->rows) {
@@ -287,7 +298,7 @@ sub _create_school_data_structure {
 	    # remove extraneous leading & trailing chars (don't know what causes this)
 	    foreach (@$row) {
 		next unless defined $_;
-		$_ = Encode::decode('UTF-8',$_);
+		$_ = decode('UTF-8',$_);
 		s/[\r\n]+/ /g;     # no newlines please!
 		s/[\x00-\x1F]//g;  # no control characters
 		s/\s{2,}/ /g;      # no redundant white space
