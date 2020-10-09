@@ -7,8 +7,7 @@ use CovidSchools::SchoolScraper;
 
 use utf8;
 use feature 'unicode_strings';
-use open ':std',OUT => ":encoding(UTF-8)";
-use open ':std',IN =>  ":encoding(UTF-8)";
+use open ':std',IO => ":encoding(UTF-8)";
 #binmode(STDOUT,":encoding(UTF-8)");
 
 my $subclass = shift || print_error_message_and_die();

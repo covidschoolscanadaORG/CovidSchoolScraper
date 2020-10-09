@@ -17,6 +17,20 @@ sub table_fields {
     return (
 	'Écoles',
 	'Cas actifs',
+	'Classes en isolement',
+	'partiellement',
+	'fermée',
+	'Cas résolus',
 	);   
 }
-    1;
+
+sub parsed_headers {
+    my $self = shift;
+    my $h    = $self->SUPER::parsed_headers;
+    foreach (@$h) {
+	s/[\r\n]/ /g;
+    }
+    return $h;
+}
+
+1;

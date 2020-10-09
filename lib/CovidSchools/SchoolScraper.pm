@@ -8,6 +8,7 @@ use LWP;
 use HTML::TableExtract;
 use File::Basename 'dirname','basename';
 use DateTime;
+use Text::CSV;
 use utf8;
 use feature 'unicode_strings';
 use Encode;
@@ -38,16 +39,6 @@ Scrape COVID case numbers from school board web sites
     use CovidSchools::SchoolScraper;
     my $ss  = CovidSchools::SchoolScraper::subclass->new();
     $ss->scrape() or die "Couldn't scrape ",$ss->error_str;
-    my @schools = $ss->schools();
-    my @table_fields = $ss->table_fields();
-    for my $sch (@schools) {
-       print $school,"\n";
-       for my $field (@table_fields) {
-           print "\t",$ss->school($sch){$field},"\n";
-       }
-    }
-
-    # may or may not be appropriate...
     $html = $ss->raw_content;
     $csv  = $ss->csv;
 
@@ -79,8 +70,9 @@ sub new {
 
 =head2 $ss->column_headers(@array)
 
-Set the column headers to look for as an array. Must correspond to table headers used for {school, confirmed cases, closed classrooms, closed school}
+Set the column headers to search for as an array. 
 
+Must correspond to table headers used for {school, confirmed cases, closed classrooms, closed school}
 Used without arguments returns ref to the array of headers. Headers may be regular expressions
 
 =cut
@@ -98,9 +90,8 @@ sub column_headers {
 
 =head2 $array_ref = $ss->table_fields
 
-Return a list of HTML table headers, e.g.
+This subclassable method returns the fields that go into column_headers.
   
-
   sub table_fields { 
       return ('School','Confirmed Cases','Closed Classroom', 'Closed School')
   }
@@ -150,7 +141,7 @@ sub scrape {
 
     $self->timestamp(DateTime->now(time_zone=>'local')->set_time_zone('floating'));
 
-    #    $self->parse(decode('utf8',uri_unescape($res->content)));
+
     $self->parse($res->content);
 }
 
@@ -177,60 +168,6 @@ sub parse {
     return 1;
 }
 
-=head2 $extractor = $self->create_extractor()
-
-Return a properly initialized. HTML::TableExtract object
-
-=cut
-
-sub create_extractor {
-    my $self = shift;
-    HTML::TableExtract->new(headers      => $self->column_headers,
-			    keep_headers => 1,
-			    debug        => 0,
-			    decode       => 0,
-	);
-}
-
-=head2 $ss->clean_text(\$text)
-
-Removes wide characters from HTML text. Pass a scalar ref.
-
-=cut
-
-# do nothing here
-sub clean_text {
-    my $self = shift;
-    my $text = shift;
-    # nothing
-}
-
-=head2 @schools = $ss->schools
-
-Return array of school names in district
-
-=cut
-
-sub schools {
-    my $self = shift;
-    $self->{schools} or return;
-    return sort keys %{$self->{schools}};
-}
-
-=head2 $school_hash = $ss->school($school_name);
-
-Returns a hashref corresponding to the named school. Keys are the table fields
-defined by table_fields() method.
-
-=cut
-
-sub school {
-    my $self = shift;
-    my $school_name = shift;
-    $self->{schools} or return;
-    return $self->{schools}{$school_name};
-}
-
 =head2 $headers = $ss->parsed_headers
 
 After parsing the table, the literal row headers will be returned by
@@ -240,6 +177,36 @@ this method as an array ref. These are used for generating the CSV
 
 sub parsed_headers {
     return shift->{parsed_headers};
+}
+
+=head2 $extractor = $self->create_extractor()
+
+Return a properly initialized. HTML::TableExtract object
+
+=cut
+
+sub create_extractor {
+    my $self = shift;
+    HTML::TableExtract->new(headers      => $self->column_headers,
+			    keep_headers => 0,
+			    debug        => 0,
+			    decode       => 0,
+	);
+}
+
+=head2 $ss->clean_text(\$text)
+
+Cleans up newlines and other nonsense
+
+=cut
+
+sub clean_text {
+    my $self = shift;
+    my $text = shift;
+    return unless defined $$text;
+    $$text   =~ s/[\r\n]/ /g;
+    $$text   =~ s/^\s+//;
+    $$text   =~ s/\s+$//;
 }
 
 =head2 $content = $ss->raw_content
@@ -261,23 +228,17 @@ Returns a comma-separated-values version of the school closure table.
 
 sub csv {
     my $self = shift;
-
-    # sigh, more cleanup...
-    my ($school,@fields) = $self->table_fields;
-    my $literal_headers  = $self->parsed_headers() || [$school,@fields];
-
-    no warnings 'uninitialized';
-    
+    my $headers = $self->parsed_headers;
+    my $rows    = $self->{table};
+    my $aoa     = [$headers,@$rows];
     my $csv = '';
-    $csv   .= $self->header;
-    $csv   .= join (',',@$literal_headers)."\n";
-    for my $sch ($self->schools) {
-	$csv .= join(',',
-		     $sch,
-		     @{$self->school($sch)}{@fields,'<undefined>'}, # for stupid Greater Essex bug that I don't have patience to fix right
-		     ). "\n";
+    for my $row (@$aoa) {
+	my @data  = map {  defined ? (/[,\s]/ ? "\"$_\"" : $_)
+			       : '' } @$row;
+	foreach (@data) {$self->clean_text(\$_)};
+	$csv     .= join(",",@data)."\n";
     }
-    return $csv;
+    return $self->header.$csv;
 }
 
 =head2 $header = $ss->header;
@@ -321,16 +282,23 @@ sub _create_school_data_structure {
     my $self = shift;
     my $te   = shift;
 
-    my @fields = @{$self->column_headers};
-    my $school_header = shift @fields;  # get rid of the first column - school
-    my %schools;
+    my @table;
     for my $table ($te->tables) {
+
+	unless ($self->{parsed_headers}) { # first row
+	    my @headers = map {decode('UTF-8'=>$_)} $table->hrow();
+	    foreach (@headers) {
+		$self->clean_text(\$_);
+	    }
+	    $self->{parsed_headers} = \@headers;
+	}
+
 	for my $row ($table->rows) {
 
 	    # remove extraneous leading & trailing chars (don't know what causes this)
 	    foreach (@$row) {
 		next unless defined $_;
-		$_ = Encode::decode('UTF-8',$_);
+		$_ = decode('UTF-8',$_);
 		s/[\r\n]+/ /g;     # no newlines please!
 		s/[\x00-\x1F]//g;  # no control characters
 		s/\s{2,}/ /g;      # no redundant white space
@@ -340,27 +308,10 @@ sub _create_school_data_structure {
 		s/\&nbsp;//g;      # get rid of the nonbreaking spaces
 		$self->clean_text(\$_);
 	    }
-
-	    unless ($self->{parsed_headers}) { # first row
-	    $self->{parsed_headers} = $row;
-	    next;
-	    }
-
-	    
-	    my ($school,@data) = @$row;
-	    next unless $school;
-	    next if $school =~ /$school_header/;  # ignore repeated header rows
-	    next unless length $data[0] > 0;
-
-	    # stupid workaround for broken Greater Essex school
-	    while (@data > @fields) {
-		push @fields,'<undefined>';
-	    }
-	    
-	    @{$schools{$school}}{@fields} = @data;
+	    push @table,$row;
 	}
     }
-    $self->{schools} = \%schools;
+    $self->{table} = \@table;
 }
 
 =head2 $ua = $self->new_user_agent()

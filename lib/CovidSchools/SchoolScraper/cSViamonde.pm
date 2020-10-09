@@ -23,19 +23,30 @@ sub table_fields {
 
 # workarounds for broken table
 sub parsed_headers {
-    my $headers = shift->SUPER::parsed_headers;
-    $headers->[0] = decode('UTF-8'=>'Établissement');
-    return $headers;
+    return [
+	map {decode('UTF-8'=>$_)}
+	'Établissement',
+	'Cas confirmés / Élèves',
+	'Cas confirmés / Membres du personnel',
+	'Information complémentaire',
+	];
 }
 
 sub create_extractor {
     my $self = shift;
     HTML::TableExtract->new(headers      => $self->column_headers,
-			    keep_headers => 1,
+			    keep_headers => 0,
 			    slice_columns => 0,
 			    debug        => 0,
 			    decode       => 0,
 	);
+}
+
+sub clean_text {
+    my $self = shift;
+    my $t    = shift;
+    return unless defined $$t;
+    $$t      =~ s/&nbsp;/ /g;
 }
 
 1;

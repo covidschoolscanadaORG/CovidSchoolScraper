@@ -22,15 +22,22 @@ sub table_fields {
 sub create_extractor {
     my $self = shift;
     HTML::TableExtract->new(headers      => $self->column_headers,
-			    keep_headers => 1,
+			    keep_headers => 0,
 			    slice_columns => 0,
 			    debug        => 0,
 	);
 }
 
+sub parsed_headers {
+    return ['Schools',
+	    'Confirmed Cases Date',
+	    'Confirmed Number of Cases']
+}
+
 sub clean_text {
     my $self = shift;
     my $text = shift;
+    return unless defined $$text;
     $$text =~ s/[^\x00-\x7f]//g;
 }
 
