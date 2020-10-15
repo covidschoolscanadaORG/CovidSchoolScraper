@@ -35,30 +35,30 @@ sub table_fields {
 	);
 }
 
-# # total hack
-# sub _create_school_data_structure {
-#     my $self = shift;
-#     my $te   = shift;
-#     my @rows = $te->rows;
+# total hack
+sub _create_school_data_structure {
+    my $self = shift;
+    my $te   = shift;
+    my @rows = $te->rows;
 
-#     # we get an 8 element array for each row
-#     my $data_started = 0;
-#     my %schools;
-#     my (undef,@headers) = $self->table_fields;
+    # we get an 8 element array for each row
+    my $data_started = 0;
+    my @table;
+
+    $self->{parsed_headers} = [$self->table_fields];
     
-#     foreach my $r (@rows) {
-# 	$data_started++ if $r->[3] && $r->[3] =~ /School Name/;
-# 	$data_started++ if $r->[4] && $r->[4] =~ /Student/;
-# 	next unless $data_started >= 2;
+    foreach my $r (@rows) {
+	$data_started++ if $r->[3] && $r->[3] =~ /School Name/;
+	$data_started++ if $r->[4] && $r->[4] =~ /Student/;
+	next unless $data_started >= 2;
 
-# 	last if $r->[3] =~ /Total/;
+	last if defined $r->[3] && $r->[3] =~ /Total/;
 	
-# 	my (undef,undef,undef,$school,@fields) = @$r;
-# 	next unless $school;
-	
-# 	@{$schools{$school}}{@headers} = @fields;
-#     }
-#     $self->{schools} = \%schools;
-# }
+	my (undef,undef,undef,$school,@fields) = @$r;
+	next unless $school;
+	push @table,[$school,@fields];
+    }
+    $self->{table} = \@table;
+}
 
 1;

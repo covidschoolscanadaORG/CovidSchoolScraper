@@ -16,6 +16,9 @@ mkdir $scrapedir unless -e $scrapedir;
 my $ts = DateTime->now(time_zone=>'local')->set_time_zone('floating')->strftime('%Y-%m-%dT%H%M');
 
 system "./script/scrapeSchools.pl       $scrapedir";
+if ($? == -1) {
+    die "Aborting due to previous errors";
+}
 system "./script/schoolScraperToHTML.pl $scrapedir > $scrapedir/SUMMARY-$ts.html";
 system "./script/update-covidschoolscanada-io.pl",GITHUBIO;
 chdir "../covidschoolscanada.github.io";

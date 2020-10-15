@@ -19,7 +19,8 @@ use open ':std'=>':encoding(UTF-8)';
 use utf8;
 
 my $DATADIR = shift or die "Usage: schoolScraperToHTML.pl <destination directory>";
-my $DATE    = DateTime->now(time_zone=>'local')->set_time_zone('floating');
+my $DATE     = DateTime->now(time_zone=>'local')->set_time_zone('floating');
+my ($TODAY)  = $DATE =~ m!(\d+-\d+-\d+)T\d+:!;
 
 my @dsbs = map {
     eval "use $_; 1" or die $@;
@@ -240,6 +241,18 @@ sub what_has_changed {
     foreach my $dsb (@$dsbs) {
 	my ($current,$previous) = find_csv(dsb_to_dir($dsb));
 	next unless $current && $previous;
+	if ($current !~ m!/$TODAY!) {
+	    warn "No current scrape for ",$dsb->district,'. Skipping';
+	    next;
+	}
+	if (-z $current) {
+	    warn "Today's scrape for ",$dsb->district," is empty. Skipping";
+	    next;
+	}
+	if (-z $previous) {
+	    warn "Yesterday's scrape for ",$dsb->district," is empty. Skipping";
+	    next;
+	}
 	my @diffs = calculate_diff($previous,$current);
 	$changed{$dsb->district} = \@diffs if @diffs;
     }
@@ -285,19 +298,18 @@ sub find_csv {
     my $dir = shift;
     my $d   = IO::Dir->new($dir) or return;
 
-    my %mtime;
+    my %name;
     while (defined($_ = $d->read)) {
 	next unless /\.csv$/;
-	my $time  = (stat("$dir/$_"))[9];
-	$mtime{"$dir/$_"} = $time;
+	$name{"$dir/$_"} = $_;
     }
 
-    return sort {$mtime{$b} <=> $mtime{$a}}  keys %mtime;
+    return sort {$name{$b} cmp $name{$a}}  keys %name;
 }
 
 sub nice_date {
     my $ts  = str2time(shift);
-    my $nice_date = DateTime->from_epoch(epoch=>$ts)->strftime('%a %b %d, %Y');
+    my $nice_date = DateTime->from_epoch(epoch=>$ts)->set_time_zone('local')->strftime('%a %b %d, %Y');
     return $nice_date;
 }
 

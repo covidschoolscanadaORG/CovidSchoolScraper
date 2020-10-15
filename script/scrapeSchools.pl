@@ -28,7 +28,11 @@ exit 0;
 
 sub scrape_and_save {
     my $dsb = shift;
-    $dsb->scrape();
+
+    unless ($dsb->scrape()) {
+	warn "skipping ",$dsb->district,": ",$dsb->error();
+	return;
+    }
 
     my $dest_file = dest_csv_path($dsb);
     open my $fh,'>:encoding(UTF-8)',"$dest_file" or die "$dest_file: $!";

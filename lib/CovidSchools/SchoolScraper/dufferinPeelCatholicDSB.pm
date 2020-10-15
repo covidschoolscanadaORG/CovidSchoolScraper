@@ -14,10 +14,12 @@ sub new {
 }
 
 sub table_fields {
-    return ('School Name',
-	    'Confirmed Cases',
+    return ('School',
+	    'Student Cases',
+	    'Staff Cases',
 	    'Closed Classrooms',
-	    'Closure Status');
+	    'Closure Status'
+	);
 }
 
 # because of certificate problems
