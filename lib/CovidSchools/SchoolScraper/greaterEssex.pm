@@ -28,16 +28,12 @@ sub create_extractor {
 	);
 }
 
-sub parsed_headers {
-    return ['Schools',
-	    'Confirmed Cases Date',
-	    'Confirmed Number of Cases']
-}
-
 sub clean_text {
     my $self = shift;
     my $text = shift;
+    $self->SUPER::clean_text($text);
     return unless defined $$text;
+    $$text =~ s/\s+/ /g;
     $$text =~ s/[^\x00-\x7f]//g;
 }
 

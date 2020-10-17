@@ -45,6 +45,7 @@ sub create_extractor {
 sub clean_text {
     my $self = shift;
     my $t    = shift;
+    $self->SUPER::clean_text($t);
     return unless defined $$t;
     $$t      =~ s/&nbsp;/ /g;
 }

@@ -13,6 +13,7 @@ use utf8;
 use feature 'unicode_strings';
 use Encode;
 use Carp 'croak';
+use HTML::Entities ;
 
 # unsuccessful attempt to get rid of weird HTML characters
 # use utf8;
@@ -204,6 +205,7 @@ sub clean_text {
     my $self = shift;
     my $text = shift;
     return unless defined $$text;
+    $$text   = decode_entities($$text);
     $$text   =~ s/[\r\n]/ /g;
     $$text   =~ s/^\s+//;
     $$text   =~ s/\s+$//;

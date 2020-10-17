@@ -38,6 +38,12 @@ sub scrape_and_save {
     open my $fh,'>:encoding(UTF-8)',"$dest_file" or die "$dest_file: $!";
     print $fh $dsb->csv;
     close $fh                    or die "$dest_file: $!";
+
+    (my $dest_html = $dest_file) =~ s/\.csv$/.html/;
+    open my $fh,'>:encoding(UTF-8)',"$dest_html" or die "$dest_html: $!";
+    print $fh $dsb->raw_content;
+    close $fh                    or die "$dest_html: $!";
+    
     return $dest_file;
 }
 
@@ -87,6 +93,7 @@ sub dest_csv_path {
 
     return "$dest_dir/$date.csv";
 }
+
 
 
 
