@@ -136,7 +136,7 @@ sub scrape {
     
     my $res  = $ua->get($self->url);
     unless ($res->is_success) {
-	$self->error("mirroring of ".$self->district." failed: ".$res->message);
+	$self->error("mirroring of ".$self->district." failed: ".$res->message." (".$res->code.")");
 	return;
     }
 

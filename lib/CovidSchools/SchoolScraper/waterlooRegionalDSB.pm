@@ -17,7 +17,7 @@ sub new {
 }
 
 sub table_fields {
-    return ('Location','Date','Staff or Student');
+    return ('Date','Location','Staff or Student');
 }
 
 1;
