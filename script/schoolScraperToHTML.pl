@@ -126,7 +126,7 @@ END
 	print "<a id=\"$tag\" href=\"$source\"><h3>$title ($comparison)</h3></a>\n";
 	
 	print "<table><tr class='header'>\n";
-	print map {s/[\x00-\x1F]//g;"<th>$_</th>"} @headers;
+	print map {s/[\x00-\x1F"]//g;"<th>$_</th>"} @headers;
 	print "</tr>\n";
 	my $style;
 	foreach (@{$changed->{$title}}) {
@@ -139,7 +139,7 @@ END
 		$style='alert';
 	    }
 	    print "<tr class='$style'>";
-	    print map {s/[\x00-\x1F]//g;"<td class='$style'>$_</td>"} map {decode('UTF-8'=>$_)} @fields[0..$#headers]; # trim trailing fields without headers
+	    print map {s/[\x00-\x1F"]//g;"<td class='$style'>$_</td>"} map {decode('UTF-8'=>$_)} @fields[0..$#headers]; # trim trailing fields without headers
 	    print "</tr>\n";
 	}
 	print "</table>\n";

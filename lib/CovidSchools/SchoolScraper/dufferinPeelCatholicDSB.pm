@@ -17,7 +17,9 @@ sub table_fields {
     return ('School',
 	    'Student Cases',
 	    'Staff Cases',
-	    'Closed Classrooms',
+	    'Board Partners',
+	    'Individual',
+	    'Classrooms',
 	    'Closure Status'
 	);
 }

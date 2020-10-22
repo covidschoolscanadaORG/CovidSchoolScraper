@@ -15,10 +15,11 @@ sub new {
 
 sub table_fields {
     return (
-	'School Name',
+	'Location',
 	'Confirmed Cases',
 	'Closed Classrooms',
 	'Closure Status',
+	'Planned Return',
 	   );   
 }
     1;
