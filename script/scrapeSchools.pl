@@ -85,6 +85,7 @@ sub find_previous {
 sub dest_csv_path {
     my $dsb = shift;
     my $date = DateTime->now(time_zone=>'local')->set_time_zone('floating');
+    $date    =~ s/://g;  # replace colons with dashes
 
     my $dest_dir = "$DATADIR/".$dsb->district;
     $dest_dir    =~ s/\s+/_/g;
