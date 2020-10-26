@@ -129,7 +129,7 @@ if (%$changed) {
 END
 	;
 
-    for my $dsb (@dsbs) {
+    for my $dsb (sort {$a->prov cmp $b->prov || $a->district cmp $b->district} @dsbs) {
 	my $title  = $dsb->district;
 	my $source = $dsb->url;
 	my $prov = $dsb->prov;
@@ -172,7 +172,7 @@ END
 ################
 print "<hr>\n";
 print "<h2 id='all'>All Advisories</h2>\n";
-for my $district (@dsbs) {
+for my $district (sort { $a->prov cmp $b->prov || $a->district cmp $b->district } @dsbs) {
     my $path      = dsb_to_dir($district);
     my @csv_files = find_csv($path) or next;
     csv_2_html($csv_files[0],$district);

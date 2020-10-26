@@ -19,7 +19,7 @@ sub table_fields {
 	'Confirmed Cases',
 	'Closed Classrooms',
 	'Closure Status',
-	'Planned Return',
+	'Planned',
 	   );   
 }
     1;
