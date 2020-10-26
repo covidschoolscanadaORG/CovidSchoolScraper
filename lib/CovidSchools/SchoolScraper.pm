@@ -58,14 +58,37 @@ BEGIN {
     $ENV{HTTPS_CA_DIR} = '/etc/ssl/certs';
 }
 
+
+my %ProvinceToPC = ('Ontario'          => 'ON',
+		    'British Columbia' => 'BC',
+		    'Manitoba'         => 'MB',
+		    'Newfoundland and Labrador' => 'NL',
+		    'Prince Edward Island'      => 'PE',
+		    'Nova Scotia'      => 'NS',
+		    'New Brunswick'    => 'NB',
+		    'Quebec'           => 'QC',
+		    'Alberta'          => 'AB',
+		    'Yukon'            => 'YT',
+		    'Northwest Territories' => 'NT',
+		    'Nunavut'               => 'NU');
+
+
 sub new {
     my $class = shift;
     my %args  = @_;
 
     $args{DISTRICT} && $args{URL} or die "required arguments: DISTRICT, URL";
+    $args{PROVINCE} ||= 'Ontario';
+
+    if (length $args{PROVINCE} == 2) {
+	my %PCToProvince = reverse %ProvinceToPC;
+	$args{PROVINCE}  = $PCToProvince{$args{PROVINCE}};
+    }
+    
     return bless {
-	district=>$args{DISTRICT},
-	url     =>$args{URL},
+	province => $args{PROVINCE},
+	district => $args{DISTRICT},
+	url      => $args{URL},
     },$class
 }
 
@@ -114,6 +137,28 @@ sub table_fields {
 
 sub district {
     decode('UTF-8'=>shift->{district});
+}
+
+=head2 $ss->province
+
+Rturn long form province name
+
+=cut
+
+sub province {
+    shift->{province};
+}
+
+
+=head2 $ss->prov
+
+Return abbreviated province
+
+=cut
+
+sub prov {
+    my $long = shift->province;
+    return $ProvinceToPC{$long};
 }
 
 =head2 $ss->url
@@ -279,13 +324,19 @@ sub _get_field {
     return $self->{schools}{$school}{$field_name};
 }
 
+sub _tables {
+    my $self = shift;
+    my $te   = shift;
+    return $te->tables;
+}
+
 
 sub _create_school_data_structure {
     my $self = shift;
     my $te   = shift;
 
     my @table;
-    for my $table ($te->tables) {
+    for my $table ($self->_tables($te)) {
 
 	unless ($self->{parsed_headers}) { # first row
 	    my @headers = map {decode('UTF-8'=>$_)} $table->hrow();
@@ -408,3 +459,4 @@ This is free software, licensed under:
 =cut
 
 1; # End of CovidSchools::SchoolScraper
+

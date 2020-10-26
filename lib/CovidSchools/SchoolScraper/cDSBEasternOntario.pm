@@ -16,8 +16,9 @@ sub new {
 sub table_fields {
     return ('School Name',
 	    'Date',
-	    'Number of Cases',
+	    'Cases',
 	    'School Closure',
+	    'Class Closure',
 	   );   
 }
 

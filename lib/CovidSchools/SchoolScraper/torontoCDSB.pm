@@ -68,7 +68,7 @@ sub _create_school_data_structure {
 	 for (my $i=0;$i<@row;$i++) {
 	     $data[$i] =  decode('UTF-8'=>$row[$i])
 		 if defined $row[$i];
-	     $self->clean_text(\{$data[$i]})
+	     $self->clean_text(\$data[$i])
 	 }
 	 push @table,[@data];
      }

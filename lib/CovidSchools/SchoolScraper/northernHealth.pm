@@ -8,6 +8,7 @@ use base 'CovidSchools::SchoolScraper';
 sub new {
     my $class = shift;
     return $class->SUPER::new(
+	PROVINCE => 'BC',
 	DISTRICT => 'Northern Health',
 	URL      => 'https://www.northernhealth.ca/health-topics/public-exposures-and-outbreaks#covid-19-school-exposures#covid-19-school-exposures#covid-19-public-exposures',
 	);

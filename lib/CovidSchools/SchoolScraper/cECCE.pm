@@ -18,9 +18,9 @@ sub table_fields {
 	'Écoles',
 	'Cas actifs',
 	'Classes en isolement',
-	'partiellement',
-	'fermée',
-	'Cas résolus',
+	'partielle',
+	'complète',
+	'résolus',
 	);   
 }
 

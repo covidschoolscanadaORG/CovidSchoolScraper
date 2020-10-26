@@ -27,6 +27,12 @@ my @dsbs = map {
     $_->new();
 } sort CovidSchools::SchoolScraper->board_subclasses;
 
+my %provinces;
+foreach (@dsbs) {
+    my $province = $_->province;
+    $provinces{$province}{$_->district}=$_;
+}
+
 # calculate what has changed
 my $changed = what_has_changed(\@dsbs);
 
@@ -67,26 +73,39 @@ print "<ul>\n";
 # create the list of links to changed data
 if (%$changed) {
     print "<li><i><a href='#changed'>Schools with Changed Advisories:</a></i></li>\n";
-    print "<ol>\n";
-    for my $district (sort keys %$changed) {
-	(my $d = $district) =~ s/\s+/_/g;
-	my $tag   .= "${d}_changed";
-	print "<li><a href=\"#$tag\">$district</a></li>\n";
+    print "<ul>\n";
+    for my $province (sort keys %provinces) {
+	print "<li><b>$province</b></li>\n";
+	print "<ol>\n";
+	for my $district (sort keys %$changed) {
+	    next unless $provinces{$province}{$district};
+	    (my $d = $district) =~ s/\s+/_/g;
+	    my $tag   .= "${d}_changed";
+	    print "<li><a href=\"#$tag\">$district</a></li>\n";
+	}
+	print "</ol>\n";
     }
-    print "</ol>\n";
+    print "</ul>\n";
 } else {
     print "<li>(No advisories have changed over past 24 hours)</li>\n";
 }
 
 # create the list of links to current data
 print "<li><i><a href='#all'>Current Advisories</a></i></li>\n";
-print "<ol>\n";
-foreach (@dsbs) {
-    my $district = $_->district;
-    my $tag      = title2tag($district);
-    print "<li><a href=\"#$tag\">$district</a></li>\n";
+
+print "<ul>\n";
+for my $province (sort keys %provinces) {
+    print "<li><b>$province</b></li>\n";
+    print "<ol>\n";
+    foreach (@dsbs) {
+	my $district = $_->district;
+	next unless $provinces{$province}{$district};
+	my $tag      = title2tag($district);
+	print "<li><a href=\"#$tag\">$district</a></li>\n";
+    }
+    print "</ol>\n";
 }
-print "</ol>\n";
+print "</ul>\n";
 print "</ul>\n";
 
 ################
@@ -113,6 +132,7 @@ END
     for my $dsb (@dsbs) {
 	my $title  = $dsb->district;
 	my $source = $dsb->url;
+	my $prov = $dsb->prov;
 	next unless $changed->{$title};
 	
 	my $comparison = shift @{$changed->{$title}};
@@ -122,8 +142,9 @@ END
 
 	(my $tag = $title) =~ s/\s+/_/g;
 	$tag    .= "_changed";
+
 	
-	print "<a id=\"$tag\" href=\"$source\"><h3>$title ($comparison)</h3></a>\n";
+	print "<a id=\"$tag\" href=\"$source\"><h3>[$prov] $title ($comparison)</h3></a>\n";
 	
 	print "<table><tr class='header'>\n";
 	print map {s/[\x00-\x1F"]//g;"<th>$_</th>"} @headers;
@@ -154,7 +175,7 @@ print "<h2 id='all'>All Advisories</h2>\n";
 for my $district (@dsbs) {
     my $path      = dsb_to_dir($district);
     my @csv_files = find_csv($path) or next;
-    csv_2_html($csv_files[0]);
+    csv_2_html($csv_files[0],$district);
 }
 ##############
 
@@ -176,11 +197,13 @@ sub dsb_to_dir {
 
 sub csv_2_html {
     my $file = shift;
+    my $dsb  = shift;
     my $aoa  = csv(in       => $file,
 		   encoding => 'UTF-8',
 	);
 
     my ($title,$source,$date,$ready_for_data,$header,$count);
+    my $prov = $dsb->prov;
     my @headers;
     
     for my $row (@$aoa) {
@@ -205,7 +228,7 @@ sub csv_2_html {
 	    my $t = $title;
 	    my $tag = title2tag($t);
 	    my $nice_date = nice_date($date);
-	    print "<a id=\"$tag\" href=\"$source\"><h3>$t ($nice_date)</h3></a>\n";
+	    print "<a id=\"$tag\" href=\"$source\"><h3>[$prov] $t ($nice_date)</h3></a>\n";
 	    $ready_for_data++;
 	}
 
@@ -241,16 +264,19 @@ sub what_has_changed {
     foreach my $dsb (@$dsbs) {
 	my ($current,$previous) = find_csv(dsb_to_dir($dsb));
 	next unless $current && $previous;
+
+	my $name = $dsb->district.' (class '.ref($dsb).' )';
+	    
 	if ($current !~ m!/$TODAY!) {
-	    warn "No current scrape for ",$dsb->district,'. Skipping';
+	    warn "No current scrape for $name. Skipping";
 	    next;
 	}
 	if (-z $current) {
-	    warn "Today's scrape for ",$dsb->district," is empty. Skipping";
+	    warn "Today's scrape for $name is empty. Skipping";
 	    next;
 	}
 	if (-z $previous) {
-	    warn "Yesterday's scrape for ",$dsb->district," is empty. Skipping";
+	    warn "Yesterday's scrape for $name is empty. Skipping";
 	    next;
 	}
 	my @diffs = calculate_diff($previous,$current);
