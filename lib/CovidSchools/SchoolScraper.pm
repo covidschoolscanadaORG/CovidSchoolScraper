@@ -68,6 +68,7 @@ my %ProvinceToPC = ('Ontario'          => 'ON',
 		    'New Brunswick'    => 'NB',
 		    'Quebec'           => 'QC',
 		    'Alberta'          => 'AB',
+		    'Saskatchewan'     => 'SK',
 		    'Yukon'            => 'YT',
 		    'Northwest Territories' => 'NT',
 		    'Nunavut'               => 'NU');
