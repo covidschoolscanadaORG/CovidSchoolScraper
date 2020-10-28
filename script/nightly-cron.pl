@@ -15,6 +15,8 @@ mkdir $scrapedir unless -e $scrapedir;
 
 my $ts = DateTime->now(time_zone=>'local')->set_time_zone('floating')->strftime('%Y-%m-%dT%H%M');
 
+print "================== nightly scrape $ts ==================\n";
+
 system "./script/scrapeSchools.pl       $scrapedir";
 if ($? == -1) {
     die "Aborting due to previous errors";
