@@ -19,8 +19,10 @@ use open ':std'=>':encoding(UTF-8)';
 use utf8;
 
 my $DATADIR = shift or die "Usage: schoolScraperToHTML.pl <destination directory>";
+my $TODAY   = shift;
+
 my $DATE     = DateTime->now(time_zone=>'local')->set_time_zone('floating');
-my ($TODAY)  = $DATE =~ m!(\d+-\d+-\d+)T\d+:!;
+($TODAY      = $DATE) =~ m!(\d+-\d+-\d+)T\d+:! unless $TODAY;
 
 my @dsbs = map {
     eval "use $_; 1" or die $@;
@@ -111,12 +113,14 @@ print "</ul>\n";
 ################
 # changed advisories
 ################
-my $csv   = Text::CSV->new({binary=>0,
+my $csv   = Text::CSV->new({binary=>1,
 			    decode_utf8=>1,
 			    allow_loose_quotes=>1,
-			    allow_loose_escapes=>1,
-			    allow_unquoted_escape=>1,
+#			    allow_loose_escapes=>1,
+#			    allow_unquoted_escape=>1,
 			    allow_whitespace=>1,
+			    auto_diag=>1,
+			    diag_verbose=>2
 			   });
 
 if (%$changed) {
