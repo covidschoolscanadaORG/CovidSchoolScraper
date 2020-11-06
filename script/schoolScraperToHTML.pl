@@ -19,10 +19,9 @@ use open ':std'=>':encoding(UTF-8)';
 use utf8;
 
 my $DATADIR = shift or die "Usage: schoolScraperToHTML.pl <destination directory>";
-my $TODAY   = shift;
 
 my $DATE     = DateTime->now(time_zone=>'local')->set_time_zone('floating');
-($TODAY      = $DATE) =~ m!(\d+-\d+-\d+)T\d+:! unless $TODAY;
+my ($TODAY)  = $DATE =~ m!(\d+-\d+-\d+)T\d+:!;
 
 my @dsbs = map {
     eval "use $_; 1" or die $@;

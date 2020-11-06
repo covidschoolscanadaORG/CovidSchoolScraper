@@ -10,7 +10,7 @@ sub new {
     return $class->SUPER::new(
 	PROVINCE => 'Ontario',
 	DISTRICT => 'Bluewater DSB',
-	URL      => 'https://www.bwdsb.on.ca/Parents/COVID-19_Advisories'
+	URL      => 'https://bwdsb.ss14.sharpschool.com/cms/One.aspx?portalId=8166184&pageId=12519920'
 	);
 }
 
