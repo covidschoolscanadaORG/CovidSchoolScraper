@@ -20,7 +20,7 @@ sub new {
 sub table_fields {
     return ('City',
 	    'School',
-	    'Information',
+	    'Event',
 	);
 }
 

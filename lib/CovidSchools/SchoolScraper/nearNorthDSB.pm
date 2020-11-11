@@ -10,7 +10,7 @@ sub new {
     return $class->SUPER::new(
 	PROVINCE => 'Ontario',
 	DISTRICT => 'Near North DSB',
-	URL      => 'https://www.nearnorthschools.ca/blog/transition-to-school-resources/23515/',
+	URL      => 'https://www.nearnorthschools.ca/blog/covid-19-updates-and-resources/20656/',
 	);
 }
 

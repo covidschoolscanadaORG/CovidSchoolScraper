@@ -23,7 +23,7 @@ sub table_fields {
 	'Report',
 	'To Date',
 	'AHS',
-	'School Division',
+	'Code',
 	'Status',
     );
 }
