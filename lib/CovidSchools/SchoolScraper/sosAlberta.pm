@@ -11,6 +11,7 @@ sub new {
     my $class = shift;
     return $class->SUPER::new(
 	DISTRICT => 'SOS Alberta',
+	PROVINCE => 'Alberta',
 	URL      => 'https://docs.google.com/spreadsheets/u/0/d/e/2PACX-1vQFuV2axZbkauJv8p09CnIPeBQuI_5A1CluMOZwvI1uwgN5x98MXjFEMkeFHjdRb55oMuW9TFhS5Inn/pubhtml/sheet?headers=false&gid=0',
 	);
 }
