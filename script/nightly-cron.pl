@@ -33,4 +33,7 @@ system "git commit -a -m'daily advisory update, $ts'";
 system "git pull";
 system "git push";
 
+# now download SOS Alberta supporting docs
+system "./script/downloadSOSAlbertaReports.pl";
+
 exit 0;
