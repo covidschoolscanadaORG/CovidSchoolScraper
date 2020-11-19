@@ -12,7 +12,8 @@ sub new {
 	DISTRICT => 'Toronto CDSB',
 	#	URL      => 'https://www.tcdsb.org/FORSTUDENTS/back-to-school/Pages/confirmed-covid-cases.aspx'
 	#	URL      => 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT1K1nGriULUzd73QeJG_wHwZ6fqV8Dra8z7V_a3RTzxvdazQvO4kpancuzAXuHDu35G7ozmKQsxMiN/pubhtml?rm=minimal&chrome=false&headers=false&gid=0'
-	URL => 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQdDk08AkrTZ5NsN8xa9-JhNazEtTRS57SGL4mE5Zp3sGe08fLbj_E7vTkuJCkEiB7TGhtnRyCxJmFV/pubhtml?rm=minimal&chrome=false&headers=false&gid=0'
+	# URL => 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQdDk08AkrTZ5NsN8xa9-JhNazEtTRS57SGL4mE5Zp3sGe08fLbj_E7vTkuJCkEiB7TGhtnRyCxJmFV/pubhtml?rm=minimal&chrome=false&headers=false&gid=0'
+	URL => 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR4fnRpWN-7TxlNyW0oOoC9BKUGTm8sp-JdDcCYBwcmfTjnWEQKKJRNiaQtOA6RoOp27mTa3e_JRumy/pubhtml?gid=458011542&rm=minimal&chrome=false&headers=false&gid=0'
 	);
 }
 
@@ -48,10 +49,9 @@ sub _create_school_data_structure {
      # hard coded
      $self->{parsed_headers} = ['School Name',
 				'School Status',
-				'#',
 				'Confirmation Date',
-				'Student Cases',
-				'Staff Cases',
+				'Active Student Cases',
+				'Active Staff Cases',
 				'Case Status',
 	 ];
 

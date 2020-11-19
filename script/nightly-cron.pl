@@ -34,6 +34,6 @@ system "git pull";
 system "git push";
 
 # now download SOS Alberta supporting docs
-system "./script/downloadSOSAlbertaReports.pl";
+# system "./script/downloadSOSAlbertaReports.pl";
 
 exit 0;
