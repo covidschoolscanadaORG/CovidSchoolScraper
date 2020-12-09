@@ -352,7 +352,7 @@ sub _create_school_data_structure {
 	    # remove extraneous leading & trailing chars (don't know what causes this)
 	    foreach (@$row) {
 		next unless defined $_;
-		$_ = decode('UTF-8',$_);
+		$_ = eval { decode('UTF-8',$_) } || $_;
 		s/[\r\n]+/ /g;     # no newlines please!
 		s/[\x00-\x1F]//g;  # no control characters
 		s/\s{2,}/ /g;      # no redundant white space

@@ -16,15 +16,26 @@ use open OUT => ":encoding(UTF-8)";
 use open IN =>  ":encoding(UTF-8)";
 
 my $DATADIR = shift or die "Usage: scrapeSchools.pl <destination directory>";
+my @modules = @ARGV;
+my %modules = map {$_=>1} @modules;
 
 my @s = CovidSchools::SchoolScraper->board_subclasses;
 for my $subclass (@s) {
+    next if skipit($subclass,\%modules);
     eval "use $subclass; 1" or die $@;
     my $dsb = $subclass->new();
     my $dest_file = scrape_and_save($dsb);
 }
 
 exit 0;
+
+sub skipit {
+    my $subclass    = shift;
+    my $filter_list = shift;
+    return unless %$filter_list;
+    ($subclass) = $subclass =~ /::(\w+)$/;
+    return !$filter_list->{$subclass};
+}
 
 sub scrape_and_save {
     my $dsb = shift;

@@ -38,10 +38,17 @@ const fs        = require('fs');
   const page = await browser.newPage();
   await page.goto('$url');
   await page.waitForTimeout(500);  
+  await delay(4000);
   const html = await page.content();
   console.log(html);
   await browser.close();
 })();
+
+function delay(time) {
+   return new Promise(function(resolve) { 
+       setTimeout(resolve, time)
+   });
+}
 END
 	
     my $puppeteer_dir = "$Bin/../puppeteer";

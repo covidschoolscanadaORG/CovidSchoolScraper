@@ -16,8 +16,9 @@ sub new {
 sub table_fields {
     return (
 	'School Name',
-	'Confirmed Cases',
-	'Closed Classrooms',
+	'Confirmed student',
+	'Confirmed staff',
+	'Closed classrooms',
 	'Closure Status',
 	   );   
 }
