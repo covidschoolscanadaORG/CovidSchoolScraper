@@ -17,8 +17,7 @@ sub table_fields {
     return (
 	"NOM DE L'ÉCOLE",
 	'CONFIRMÉS',
-	'ACTIVES',
-	'FERMETURE',
+	'FERMÉES',
 	   );   
 }
     1;
