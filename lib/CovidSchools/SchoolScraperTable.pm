@@ -39,6 +39,7 @@ sub csv {
     $csv   .= $self->header;
     my $table = $self->{raw_content};
     $table    =~ s/,\s*$//gm;  # remove pesky trailing commas
+    $table    =~ s/\r//g;      # remove pesky trailing newlines
     $csv .= $table;
     $csv;
 }
