@@ -36,4 +36,7 @@ system "git push";
 # now download SOS Alberta supporting docs
 # system "./script/downloadSOSAlbertaReports.pl";
 
+# now run the BC Update script
+system "./script/daily_BCUpdate.pl";
+
 exit 0;

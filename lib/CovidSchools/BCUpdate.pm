@@ -2,12 +2,13 @@ package CovidSchools::BCUpdate;
 use strict;
 use warnings;
 
-use LWP::Simple 'get';
+use LWP::Simple 'get','mirror','is_success','RC_NOT_MODIFIED','RC_OK','RC_NOT_FOUND';
 use DateTime;
 use HTML::TableExtract;
 use File::Basename 'dirname','basename';
 use File::Path 'make_path';
 use File::Temp 'tempfile';
+use File::stat;
 use DateTime;
 use Text::CSV 'csv';
 use utf8;
@@ -20,6 +21,7 @@ use constant BASE          => "$ENV{HOME}/Dropbox/BC_Automation/School_Names_Ref
 use constant SCHOOLS       => BASE . 'BC_official_names.csv';
 use constant GOOGLE_NAMES  => BASE . 'BC_google_to_official_names.csv';
 use constant TRACKER_NAMES => BASE . 'BC_covid_to_official_names.csv';
+use constant CACHE_TIME    => 24 * 60 * 60;  # seconds to allow cache
 
 # destination for the cleaned csv stuff
 use constant CLEAN_CSV     => "$ENV{HOME}/Dropbox/BC_Automation/daily_update";
@@ -55,6 +57,7 @@ sub new {
 	google_names       => $p{GOOGLE_NAMES}       // GOOGLE_NAMES,
 	tracker_names      => $p{TRACKER_NAMES}      // TRACKER_NAMES,
 	cache_dir          => $p{CACHE_DIR},
+	clean_csv_path     => $p{'CLEAN_CSV'} || CLEAN_CSV,
     };
     return bless $self=>$class;
 }
@@ -64,6 +67,12 @@ sub new {
 grassroots_tracker(), schools(), google_names(), tracker_names()
 
 =cut
+
+sub clean_csv_path {
+    my $self = shift;
+    $self->{clean_csv_path} = shift if @_;
+    $self->{clean_csv_path};
+}
 
 sub grassroots_tracker {
     my $self = shift;
@@ -105,9 +114,11 @@ Write out appropriately-timestamped clean.csv file
 
 sub write_clean_file {
     my $self = shift;
+    my $table = shift;
+    
     my $path = $self->clean_file_path;
     -d dirname($path) or make_path(dirname($path)) or die "Couldn't make directory for $path: $!";
-    my ($data,$headers) = $self->make_clean_data();
+    my ($data,$headers) = $self->make_clean_data($table);
     csv(in       => $data,
 	out      => $path,
 	sep_char => ',',
@@ -119,7 +130,8 @@ sub write_clean_file {
 # create the data structure for the clean_data
 # It will be an array-of-array in suitable format for CSV conversion
 sub make_clean_data {
-    my $self = shift;
+    my $self  = shift;
+    my $tracker_table = shift;
 
     # headers for the clean file. School.Name is the *official* BC school name, which may not be unique
     my @headers = ('School.Code','School.Name','Tracker.Name','Google.Name',
@@ -128,7 +140,7 @@ sub make_clean_data {
 		   'School.board','Type_of_school','City','Province',
 		   'Latitude','Longitude');
 
-    my $aa      = $self->get_grassroots_tracker_table();
+    my $aa      = $tracker_table || $self->get_grassroots_tracker_table();
 
     # numbered fields of the tracker table:
     # 'Notification Date', 'School', 'Address', 'City', 'School District', 'Health Region', 'Notification', 'Exposure Dates', 'Extra Info', 'Documentation', 'Status'
@@ -136,14 +148,14 @@ sub make_clean_data {
     my @tracker_headers = ('Notification Date', 'School', 'Address', 'City', 'School District', 'Health Region', 'Notification', 'Exposure Dates', 'Extra Info', 'Documentation', 'Status');
     
     # run through the tracker table, and aggregate cases per school
-    my (%school,%code_to_tracker);
+    my (%school,%code_to_tracker,%missing_schools);
     for my $row (@$aa) {
 	my %f;
 	@f{@tracker_headers} = @$row;
 
 	my $code = $self->bc_schoolname_to_code($f{School});
 	unless ($code) {
-	    warn "$f{School}: missing official BC school code\n";
+	    $missing_schools{$f{School}}++;
 	    next;
 	}
 	$code_to_tracker{$code} = $f{School};
@@ -151,7 +163,7 @@ sub make_clean_data {
 	my $date = $f{'Notification Date'};
 	$date    =~ s!(\d+)/(\d+)/(\d+)!$3-$1-$2!;   # from mm/dd/yyyy to yyyy-mm-dd
 
-	$school{$code}{$date}{Article} = $f{Documentation} ? $self->get_url_for_link($f{Documentation}) : 'NA';
+	$school{$code}{$date}{Article} = $f{Documentation} || 'NA';
     }
 
     my $school_info     = $self->official_school_map();
@@ -186,6 +198,12 @@ sub make_clean_data {
 
 	push @results,[@r{@headers}];
     }
+
+    print STDERR "The following schools are missing official BC school codes and were skipped:\n";
+    foreach (sort keys %missing_schools) {
+	print "$_\t($missing_schools{$_} events)\n";
+    }
+
     return (\@results,\@headers);
 }
 
@@ -333,9 +351,57 @@ sub get_url_for_link {
     return $url;
 }
 
-sub get_article {
-    my $self = shift;
-    my $url  = shift;
+sub mirror_articles {
+    my $self  = shift;
+    my $table = shift;
+    my $dest  = shift;
+   
+    my (%retrieval_status,$total);
+    for my $row (@$table) {
+	my $documentation = $row->[9]                                           or next;
+	my $mirror_dest   = $self->bc_schoolname_to_google_directory($row->[1]) or next;
+	my $url           = $self->get_url_for_link($documentation)             or next;
+
+	my $response_code = $self->mirror_article($url,"$dest/$mirror_dest");
+	$total++;
+
+	if ($response_code == 200) {
+	    $retrieval_status{'new'}++;
+	    print STDERR ".";
+	} elsif ($response_code == RC_NOT_MODIFIED) {
+	    $retrieval_status{'unchanged'}++;
+	    print STDERR "=";
+	} elsif ($response_code == RC_NOT_FOUND) {
+	    $retrieval_status{'not found'}++;
+	    print STDERR "!";
+	} else {
+	    $retrieval_status{'error'}++;
+	    print STDERR "x";
+	}
+
+	next unless is_success($response_code) or $response_code == RC_NOT_MODIFIED;
+
+	# if all goes well, we replace the row with the google link
+	$row->[9] = "/BC/$mirror_dest/".basename($url);
+    }
+    print STDERR "\n";
+    foreach ('new','unchanged','not found','error') { $retrieval_status{$_}+=0 }
+    
+    print STDERR <<END;
+$total articles checked    
+  New:           $retrieval_status{new}
+  Unchanged:     $retrieval_status{unchanged}
+  Missing (404): $retrieval_status{'not found'}
+  Error:         $retrieval_status{error}
+END
+}
+
+sub mirror_article {
+    my $self     = shift;
+    my $url      = shift;
+    my $dest_dir = shift;
+    my $filename = basename($url);
+    return RC_NOT_MODIFIED if -e "$dest_dir/$filename";  # already got it
 
     my $node = `which node`;
     croak "node.js and puppeteer need to be installed for the ",ref($self)," scraper to work"
@@ -358,19 +424,23 @@ const fs        = require('fs');
 END
     ;
     my $puppeteer_dir = "$Bin/../puppeteer";
-    my($infh,$filename) = tempfile();
-    my $command = "| cd '$puppeteer_dir'; $node - >$filename";
+    my($infh,$infile) = tempfile('/tmp/BCUpdate-XXXXXX',UNLINK=>1);
+    my $command = "| cd '$puppeteer_dir'; $node - >$infile";
     open my $outfh,$command or die "Could not open $command for input: $!";
     print $outfh $node_script;
     close $outfh;
 
     seek($infh,0,0);
     my $data = '';
-    while ((my $bytes = read($infh,$data,1024,length($data)) > 0)) { 1 };
+    while ((my $bytes = read($infh,$data,8192,length($data)) > 0)) { 1 };
 
     # find the src tag
     my ($src) = $data =~ m!<img src="([^"]+)"!;
-    return get($src);
+    return 400 unless $src;
+
+    my $response = mirror($src,"$dest_dir/$filename");
+
+    return $response;
 }
 
 ################ cache control #############3
@@ -392,10 +462,22 @@ sub save_cached_content {
     }
 }
 
+# load cached content iff cached content is less than CACHE_TIME seconds old
+# (currently 24h)
 sub load_cached_content {
     my $self = shift;
     my $cache_dir = shift || '.';
     my @files     = sort <$cache_dir/*.html> or return;
+
+    my $now    = time();
+    my $oldest = $now;
+    foreach (@files) {
+	my $st    = stat($_);
+	my $mtime = $st->mtime;
+	$oldest   = $mtime if $oldest > $mtime;
+    }
+    return if $now-$oldest > CACHE_TIME;
+    
     my @content;
     foreach (@files) {
 	my $content = '';
@@ -437,6 +519,15 @@ sub bc_schoolname_to_code {
     return $matches[0] if @matches == 1;
 
     return;
+}
+
+sub bc_schoolname_to_google_directory {
+    my $self   = shift;
+    my $name   = shift;
+    my $code   = $self->bc_schoolname_to_code($name) or return;
+    my $school = $self->official_school_map()->{$code}{'School.Name'};
+    $school    =~ s!/! !g;  # no slashes allowed
+    return "${code}_${school}";
 }
 
     
