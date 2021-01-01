@@ -37,6 +37,8 @@ system "git push";
 # system "./script/downloadSOSAlbertaReports.pl";
 
 # now run the BC Update script
+print "Doing BC Update\n";
+chdir "$Bin/..";  # back to top level
 system "./script/daily_BCUpdate.pl";
 
 exit 0;

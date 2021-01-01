@@ -2,6 +2,7 @@ package CovidSchools::BCUpdate;
 use strict;
 use warnings;
 
+use utf8;
 use LWP::Simple 'get','mirror','is_success','RC_NOT_MODIFIED','RC_OK','RC_NOT_FOUND';
 use DateTime;
 use HTML::TableExtract;
@@ -11,7 +12,7 @@ use File::Temp 'tempfile';
 use File::stat;
 use DateTime;
 use Text::CSV 'csv';
-use utf8;
+use String::Approx 'amatch','adist';
 use Encode 'encode','decode';
 use FindBin '$Bin';
 use Carp 'croak';
@@ -28,6 +29,9 @@ use constant CLEAN_CSV     => "$ENV{HOME}/Dropbox/BC_Automation/daily_update";
 
 use constant RESULTS_PER_PAGE => 1000;  # for grassroots paging
 use constant GRASSROOTS_TRACKER => 'https://bcschoolcovidtracker.knack.com/bc-school-covid-tracker#home/?view_3_per_page='.RESULTS_PER_PAGE;
+
+# how much fuzz to add to approximate matching
+use constant FUZZY_MATCH => '15%';
 
 # how long to wait for tracker page to load (milliseconds)
 use constant GRASSROOTS_TRACKER_DELAY=> 4000;   # for data to load, 4s per page
@@ -126,6 +130,24 @@ sub write_clean_file {
 	headers  => $headers
 	);
 }
+=head2 $bc->write_tracker_file()
+
+Write out appropriately-timestamped CSV file of the raw tracker data
+
+=cut
+
+sub write_tracker_file {
+    my $self = shift;
+    my $table = shift;
+    
+    my $path = $self->tracker_file_path;
+    -d dirname($path) or make_path(dirname($path)) or die "Couldn't make directory for $path: $!";
+    csv(in       => $table,
+	out      => $path,
+	sep_char => ',',
+	encoding => 'utf-8',
+	);
+}
 
 # create the data structure for the clean_data
 # It will be an array-of-array in suitable format for CSV conversion
@@ -153,9 +175,9 @@ sub make_clean_data {
 	my %f;
 	@f{@tracker_headers} = @$row;
 
-	my $code = $self->bc_schoolname_to_code($f{School});
+	my $code = $self->bc_schoolname_to_code($f{School},$f{City});
 	unless ($code) {
-	    $missing_schools{$f{School}}++;
+	    $missing_schools{$f{School}}{$f{City}}++;
 	    next;
 	}
 	$code_to_tracker{$code} = $f{School};
@@ -199,9 +221,11 @@ sub make_clean_data {
 	push @results,[@r{@headers}];
     }
 
-    print STDERR "The following schools are missing official BC school codes and were skipped:\n";
-    foreach (sort keys %missing_schools) {
-	print "$_\t($missing_schools{$_} events)\n";
+    print STDERR "The following schools are missing official BC school codes and were skipped (format <name> <city> (<events>)):\n";
+    for my $school (sort keys %missing_schools) {
+	for my $city (sort keys %{$missing_schools{$school}}) {
+	    print STDERR "$school\t$city\t($missing_schools{$school}{$city})\n";
+	}
     }
 
     return (\@results,\@headers);
@@ -212,6 +236,13 @@ sub clean_file_path {
     my $datetime = DateTime->now();
     my $ymd      = $datetime->ymd('');
     return join ('/',CLEAN_CSV,"export-$ymd","CanadaMap_BCMerge-$ymd.clean.csv");
+}
+
+sub tracker_file_path {
+    my $self = shift;
+    my $datetime = DateTime->now();
+    my $ymd      = $datetime->ymd('');
+    return join ('/',CLEAN_CSV,"export-$ymd","BCTracker-raw-$ymd.csv");
 }
 
 =cut
@@ -358,9 +389,9 @@ sub mirror_articles {
    
     my (%retrieval_status,$total);
     for my $row (@$table) {
-	my $documentation = $row->[9]                                           or next;
-	my $mirror_dest   = $self->bc_schoolname_to_google_directory($row->[1]) or next;
-	my $url           = $self->get_url_for_link($documentation)             or next;
+	my $documentation = $row->[9]                                                     or next;
+	my $mirror_dest   = $self->bc_schoolname_to_google_directory($row->[1],$row->[3]) or next;
+	my $url           = $self->get_url_for_link($documentation)                       or next;
 
 	my $response_code = $self->mirror_article($url,"$dest/$mirror_dest");
 	$total++;
@@ -508,6 +539,7 @@ sub grassroots_headers {
 sub bc_schoolname_to_code {
     my $self = shift;
     my $name = shift;
+    my $city = shift;
 
     my @exact_matches = $self->official_school_name_to_codes($name);
     return $exact_matches[0] if @exact_matches == 1;
@@ -518,13 +550,18 @@ sub bc_schoolname_to_code {
     my @matches       = keys %{$bc_school_map->{$name}};
     return $matches[0] if @matches == 1;
 
+    # Otherwise we try our own approximate matching
+    my @approx_matches = $self->approximate_school_match($name,$city);
+    return $approx_matches[0] if @approx_matches == 1;
+
     return;
 }
 
 sub bc_schoolname_to_google_directory {
     my $self   = shift;
     my $name   = shift;
-    my $code   = $self->bc_schoolname_to_code($name) or return;
+    my $city   = shift;
+    my $code   = $self->bc_schoolname_to_code($name,$city) or return;
     my $school = $self->official_school_map()->{$code}{'School.Name'};
     $school    =~ s!/! !g;  # no slashes allowed
     return "${code}_${school}";
@@ -544,10 +581,9 @@ sub get_bccovid_to_school_map {
     my $self = shift;
     my %map;
 
+    # for future thought: use the csv headers=>'auto' parameter
+    # to return an array-of-hashes
     my $aoa  = csv(in=>TRACKER_NAMES);
-
-    # drop the first line
-    shift @$aoa;
 
     # next line is the headers
     my @headers = @{shift @$aoa};
@@ -594,6 +630,38 @@ sub official_school_name_to_codes {
     my @results;
     my @matches = grep {$map->{$_}{'School.Name'} eq $name} keys %$map;
     return @matches;
+}
+
+# This tries to perform an approximate match on BC tracker school names to
+# official codes
+sub approximate_school_match {
+    my $self         = shift;
+    my $tracker_name = shift;
+    my $city         = shift;
+    
+    my $official_map = $self->official_school_map;
+    my %approx_matches;
+
+    # allow up to FUZZY_MATCH fuzz
+    for my $code (keys %$official_map) {
+	my $official_name = $official_map->{$code}{'School.Name'};
+	my @m             = amatch($official_name,['i',FUZZY_MATCH],$tracker_name);
+	$approx_matches{$code}++ if @m > 0;
+    }
+
+    # filter by distance and city
+    my %results;
+    for my $candidate (keys %approx_matches) {
+	my $candidate_city = $official_map->{$candidate}{City} or die "school code $candidate: no city recorded";
+	$results{$candidate}=adist($tracker_name,$official_map->{$candidate}{'School.Name'})
+	    if !$city or (lc($city) eq lc($candidate_city));
+    }
+
+    return unless keys %results;  # no matches :-(
+	
+    # slightly bad - return best match
+    my @sorted = sort {abs($results{$a}) <=> abs($results{$b})} keys %results;
+    return $sorted[0];
 }
 
 # hash that maps a school code to its google name

@@ -1,7 +1,8 @@
 #!/usr/bin/perl
 
 use strict;
-use lib '../lib';
+use FindBin '$Bin';
+use lib "$Bin/../lib";
 use CovidSchools::BCUpdate;
 use File::Temp 'tempdir';
 
@@ -26,6 +27,9 @@ until (-e "$dest/.mounted") {
     die "Couldn't mount google drive" if $tries++ > 10;
     sleep 1;
 }
+
+print STDERR "Writing out copy of parsed tracker file\n";
+$bc->write_tracker_file($table);
 
 print STDERR "Mirroring documentation\n";
 $bc->mirror_articles($table,$dest);
