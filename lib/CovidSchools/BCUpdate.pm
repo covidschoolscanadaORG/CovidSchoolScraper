@@ -4,7 +4,6 @@ use warnings;
 
 use utf8;
 use LWP::Simple 'get','mirror','is_success','RC_NOT_MODIFIED','RC_OK','RC_NOT_FOUND';
-use DateTime;
 use HTML::TableExtract;
 use File::Basename 'dirname','basename';
 use File::Path 'make_path';
@@ -233,14 +232,14 @@ sub make_clean_data {
 
 sub clean_file_path {
     my $self = shift;
-    my $datetime = DateTime->now();
+    my $datetime = DateTime->now(time_zone=>'local');
     my $ymd      = $datetime->ymd('');
     return join ('/',CLEAN_CSV,"export-$ymd","CanadaMap_BCMerge-$ymd.clean.csv");
 }
 
 sub tracker_file_path {
     my $self = shift;
-    my $datetime = DateTime->now();
+    my $datetime = DateTime->now(time_zone=>'local');
     my $ymd      = $datetime->ymd('');
     return join ('/',CLEAN_CSV,"export-$ymd","BCTracker-raw-$ymd.csv");
 }
@@ -384,8 +383,8 @@ sub get_url_for_link {
 
 sub mirror_articles {
     my $self  = shift;
-    my $table = shift;
-    my $dest  = shift;
+    my ($table,$dest,$cache,$make_link_sub) = @_;
+    $cache ||= {};
    
     my (%retrieval_status,$total);
     for my $row (@$table) {
@@ -393,7 +392,9 @@ sub mirror_articles {
 	my $mirror_dest   = $self->bc_schoolname_to_google_directory($row->[1],$row->[3]) or next;
 	my $url           = $self->get_url_for_link($documentation)                       or next;
 
-	my $response_code = $self->mirror_article($url,"$dest/$mirror_dest");
+	my $path          = "/BC/$mirror_dest/".basename($url);
+	my $response_code = $cache->{$path} ? RC_NOT_MODIFIED
+	                                    : $self->mirror_article($url,"$dest/$mirror_dest");
 	$total++;
 
 	if ($response_code == 200) {
@@ -413,7 +414,11 @@ sub mirror_articles {
 	next unless is_success($response_code) or $response_code == RC_NOT_MODIFIED;
 
 	# if all goes well, we replace the row with the google link
-	$row->[9] = "/BC/$mirror_dest/".basename($url);
+	if ($make_link_sub && (my $new_url = $make_link_sub->($path))) {
+	    $row->[9] = $new_url;
+	} else {
+	    $row->[9] = $path;
+	}
     }
     print STDERR "\n";
     foreach ('new','unchanged','not found','error') { $retrieval_status{$_}+=0 }
@@ -429,8 +434,7 @@ END
 
 sub mirror_article {
     my $self     = shift;
-    my $url      = shift;
-    my $dest_dir = shift;
+    my ($url,$dest_dir)   = @_;
     my $filename = basename($url);
     return RC_NOT_MODIFIED if -e "$dest_dir/$filename";  # already got it
 

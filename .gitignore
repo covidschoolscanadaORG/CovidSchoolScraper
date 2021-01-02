@@ -41,3 +41,5 @@ ignore.txt
 test.pl
 google_drive.txt
 
+/secrets/
+test*
