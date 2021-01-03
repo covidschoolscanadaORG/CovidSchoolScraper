@@ -121,14 +121,25 @@ sub write_clean_file {
     
     my $path = $self->clean_file_path;
     -d dirname($path) or make_path(dirname($path)) or die "Couldn't make directory for $path: $!";
-    my ($data,$headers) = $self->make_clean_data($table);
+
+    my ($data,$headers,$missing) = $self->make_clean_data($table);
     csv(in       => $data,
 	out      => $path,
 	sep_char => ',',
 	encoding => 'utf-8',
 	headers  => $headers
 	);
+
+    if ($missing) {
+	$path = $self->missing_school_path;
+	csv(in   => $missing,
+	    out  => $path,
+	    sep_char => ',',
+	    encoding => 'utf-8',
+	    );
+    }
 }
+
 =head2 $bc->write_tracker_file()
 
 Write out appropriately-timestamped CSV file of the raw tracker data
@@ -143,6 +154,9 @@ sub write_tracker_file {
     -d dirname($path) or make_path(dirname($path)) or die "Couldn't make directory for $path: $!";
     csv(in       => $table,
 	out      => $path,
+	headers  => (@{$self->{bc_tracker_raw_headers}}
+	              ? $self->{bc_tracker_raw_headers}
+	              : [$self->grassroots_headers]),
 	sep_char => ',',
 	encoding => 'utf-8',
 	);
@@ -184,7 +198,12 @@ sub make_clean_data {
 	my $date = $f{'Notification Date'};
 	$date    =~ s!(\d+)/(\d+)/(\d+)!$3-$1-$2!;   # from mm/dd/yyyy to yyyy-mm-dd
 
-	$school{$code}{$date}{Article} = $f{Documentation} || 'NA';
+	# each school code has a series of events associated with it
+	# each event is a hash of {date=>xxx,article=>xxx}
+	push @{$school{$code}},{date    => $date,
+				article => $f{Documentation} || 'NA'}
+
+#	$school{$code}{$date}{Article} = $f{Documentation} || 'NA';
     }
 
     my $school_info     = $self->official_school_map();
@@ -201,12 +220,12 @@ sub make_clean_data {
 	$r{'Tracker.Name'} = $code_to_tracker{$code};
 	$r{'Google.Name'}  = $code_to_google->{$code};
 
-	my @events                    = keys %{$school{$code}}; # report dates
+	my @events                    = @{$school{$code}}; # array of hash
 	$r{'Total.cases.to.date'}     = join ';',map {1} @events;  # creates a string like 1;1;1
 	$r{'Total.students.to.date'}  = 'NA';
 	$r{'Total.staff.to.date'}     = 'NA';
-	$r{'Date'}                    = join ';',@events;
-	$r{'Article'}                 = join ';',map {$school{$code}{$_}{Article}} @events;
+	$r{'Date'}                    = join ';',map {$_->{date}   } @events;
+	$r{'Article'}                 = join ';',map {$_->{article}} @events;
 	$r{'Total.outbreaks.to.date'} = 'NA';
 	$r{'Outbreak.dates'}          = 'NA';
 	$r{'Outbreak.status'}         = 'NA';
@@ -221,20 +240,29 @@ sub make_clean_data {
     }
 
     print STDERR "The following schools are missing official BC school codes and were skipped (format <name> <city> (<events>)):\n";
+    my @missing = ['School','City','Events'];
     for my $school (sort keys %missing_schools) {
 	for my $city (sort keys %{$missing_schools{$school}}) {
 	    print STDERR "$school\t$city\t($missing_schools{$school}{$city})\n";
+	    push @missing,[$school,$city,$missing_schools{$school}{$city}];
 	}
     }
 
-    return (\@results,\@headers);
+    return (\@results,\@headers,\@missing);
 }
 
 sub clean_file_path {
     my $self = shift;
     my $datetime = DateTime->now(time_zone=>'local');
     my $ymd      = $datetime->ymd('');
-    return join ('/',CLEAN_CSV,"export-$ymd","CanadaMap_BCMerge-$ymd.clean.csv");
+    return join ('/',CLEAN_CSV,"export-$ymd","CanadaMap_BC-$ymd.clean.csv");
+}
+
+sub missing_school_path {
+    my $self = shift;
+    my $datetime = DateTime->now(time_zone=>'local');
+    my $ymd      = $datetime->ymd('');
+    return join ('/',CLEAN_CSV,"export-$ymd","Schools-Not-Found-$ymd.csv");
 }
 
 sub tracker_file_path {
@@ -364,8 +392,22 @@ sub get_grassroots_tracker_table {
 
 	pop @r if $r[-1][0] eq ''; # last row seems to be empty
 	push @rows,@r;
+	$self->{bc_tracker_raw_headers} = [$self->_get_headers($extractor)];
     }
     return \@rows;
+}
+
+sub _get_headers {
+    my $self = shift;
+    my $extractor = shift;
+    my @tables    = $extractor->tables or return;
+    my @headers   = $tables[0]->hrow();
+    foreach (@headers) {
+	s/^\s+//;
+	s/\s+$//;
+	s/\s+\d+$//;
+    }
+    return @headers;
 }
 
 # traverse the HTML and find the href for a link identified by content
