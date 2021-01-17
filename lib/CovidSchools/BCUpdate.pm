@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use utf8;
-use LWP::Simple 'get','mirror','is_success','RC_NOT_MODIFIED','RC_OK','RC_NOT_FOUND';
+use LWP::Simple 'get','getstore','mirror','is_success','RC_NOT_MODIFIED','RC_OK','RC_NOT_FOUND';
 use HTML::TableExtract;
 use File::Basename 'dirname','basename';
 use File::Path 'make_path';
@@ -27,7 +27,8 @@ use constant CACHE_TIME    => 24 * 60 * 60;  # seconds to allow cache
 use constant CLEAN_CSV     => "$ENV{HOME}/Dropbox/BC_Automation/daily_update";
 
 use constant RESULTS_PER_PAGE => 1000;  # for grassroots paging
-use constant GRASSROOTS_TRACKER => 'https://bcschoolcovidtracker.knack.com/bc-school-covid-tracker#home/?view_3_per_page='.RESULTS_PER_PAGE;
+use constant GRASSROOTS_TRACKER           => 'https://bcschoolcovidtracker.knack.com/bc-school-covid-tracker#home/?view_3_per_page='.RESULTS_PER_PAGE;
+use constant COVID_SCHOOLS_CURATED_PAGE   => 'https://docs.google.com/spreadsheets/d/1MYDtPm_iaVHiiDtFBlToPD0a9JQF0CkXXSgrPL9w-Ko/export?format=csv&id=1MYDtPm_iaVHiiDtFBlToPD0a9JQF0CkXXSgrPL9w-Ko&gid=4733846';
 
 # how much fuzz to add to approximate matching
 use constant FUZZY_MATCH => '15%';
@@ -45,6 +46,7 @@ BC School Automation for CovidSchoolsCanada
                                         SCHOOLS      => '<path to official school names and locations.csv>',
                                         GOOGLE_NAMES => '<path to join between Google Map names and official names.csv>',
                                         TRACKER_NAMES=> '<path to join between official school names and Covid school tracker.csv>',
+                                        CURATED_PAGE => 'URL of the curated M4C School Tracker curated page for BC',
                                         CACHE_DIR  => '/tmp/BCUpdate',
      );
   $bc->update('<path_to_clean.csv>');
@@ -59,6 +61,7 @@ sub new {
 	schools            => $p{SCHOOLS}            // SCHOOLS,
 	google_names       => $p{GOOGLE_NAMES}       // GOOGLE_NAMES,
 	tracker_names      => $p{TRACKER_NAMES}      // TRACKER_NAMES,
+	curated_page       => $p{CURATED_PAGE}       // COVID_SCHOOLS_CURATED_PAGE,
 	cache_dir          => $p{CACHE_DIR},
 	clean_csv_path     => $p{'CLEAN_CSV'} || CLEAN_CSV,
     };
@@ -105,6 +108,12 @@ sub cache_dir {
     my $self = shift;
     $self->{cache_dir} = shift if @_;
     $self->{cache_dir};
+}
+
+sub curated_page {
+    my $self = shift;
+    $self->{curated_page} = shift if @_;
+    $self->{curated_page};
 }
 
 =head1 METHODS
@@ -171,7 +180,7 @@ sub make_clean_data {
     # headers for the clean file. School.Name is the *official* BC school name, which may not be unique
     my @headers = ('School.Code','School.Name','Tracker.Name','Google.Name',
 		   'Total.cases.to.date','Total.students.to.date','Total.staff.to.date','Date','Article',
-		   'Total.outbreaks.to.date','Outbreak.dates','Outbreak.Status',
+		   'Total.outbreaks.to.date','Outbreak.dates','Outbreak.Status','Outbreak.Article',
 		   'School.board','Type_of_school','City','Province',
 		   'Latitude','Longitude');
 
@@ -202,8 +211,6 @@ sub make_clean_data {
 	# each event is a hash of {date=>xxx,article=>xxx}
 	push @{$school{$code}},{date    => $date,
 				article => $f{Documentation} || 'NA'}
-
-#	$school{$code}{$date}{Article} = $f{Documentation} || 'NA';
     }
 
     my $school_info     = $self->official_school_map();
@@ -228,7 +235,8 @@ sub make_clean_data {
 	$r{'Article'}                 = join ';',map {$_->{article}} @events;
 	$r{'Total.outbreaks.to.date'} = 'NA';
 	$r{'Outbreak.dates'}          = 'NA';
-	$r{'Outbreak.status'}         = 'NA';
+	$r{'Outbreak.Status'}         = 'NA';
+	$r{'Outbreak.Article'}        = 'NA';
 	$r{'School.board'}            = $info->{'District.Number'};
 	$r{'Type_of_school'}          = 'NA';
 	$r{'City'}                    = $info->{'City'};
@@ -239,16 +247,73 @@ sub make_clean_data {
 	push @results,[@r{@headers}];
     }
 
-    print STDERR "The following schools are missing official BC school codes and were skipped (format <name> <city> (<events>)):\n";
-    my @missing = ['School','City','Events'];
-    for my $school (sort keys %missing_schools) {
-	for my $city (sort keys %{$missing_schools{$school}}) {
-	    print STDERR "$school\t$city\t($missing_schools{$school}{$city})\n";
-	    push @missing,[$school,$city,$missing_schools{$school}{$city}];
+    # add the curated data
+    my $changed = $self->merge_curated_data(\@results,\@headers,$self->curated_page) if $self->curated_page;
+    print STDERR "$changed fields from curated table merged into clean table\n";
+
+    my $missing = $self->report_missing_schools(\%missing_schools) if %missing_schools;
+
+    return (\@results,\@headers,$missing);
+}
+
+# This method takes the cleaned data from make_clean_data() and merges in the Total.outbreaks, Outbreak.dates, Outbreak.Status, and Outbreak.Article
+# fields from the curated Google Doc
+sub merge_curated_data {
+    my $self = shift;
+    my ($clean_table,$clean_headers,$curated_url) = @_;
+
+    my($fh,$filename) = tempfile('BC-update-curated-XXXXXX',SUFFIX=>'.csv',UNLINK=>1);
+    my $code = getstore($curated_url,$filename);
+    unless (is_success($code)) {
+	warn "Unable to fetch curated data from $curated_url: code=$code";
+	return;
+    }
+    seek($fh,0,0);
+
+    # parse merged data
+    my $aoh = csv(in => $fh,
+		  sep_char => ',',
+		  encoding => 'utf-8',
+		  headers  => 'auto');
+    close $fh;
+
+    # the School.Code field is unique, so use it as an index
+    # into the curated table
+    my %curated = map {$_->{'School.Code'} => $_} @$aoh;
+
+    # figure out the corresponding indexes in the clean table
+    my $index = 0;
+    my %i     = map {$_=>$index++} @$clean_headers;
+
+    # copy curated Outbreak fields into clean table
+    my $changed = 0;
+    for my $clean_row (@$clean_table) {
+	my $code = $clean_row->[$i{'School.Code'}];
+	for my $f ('Total.outbreaks.to.date','Outbreak.dates','Outbreak.Status','Outbreak.Article') {
+	    my $clean_index = $i{$f} // next;  # if index isn't present skip it!!!!
+	    next unless defined $curated{$code};
+	    next unless defined $curated{$code}{$f};
+	    $clean_row->[$clean_index] = $curated{$code}{$f} || 'NA';
+	    $changed++;
 	}
     }
 
-    return (\@results,\@headers,\@missing);
+    return $changed;
+}
+
+sub report_missing_schools {
+    my $self = shift;
+    my $missing_schools = shift;
+    
+    print STDERR "The following schools are missing official BC school codes and were skipped (format <name> <city> (<events>)):\n";
+    my @missing = ['School','City','Events'];
+    for my $school (sort keys %$missing_schools) {
+	for my $city (sort keys %{$missing_schools->{$school}}) {
+	    print STDERR "$school\t$city\t($missing_schools->{$school}{$city})\n";
+	    push @missing,[$school,$city,$missing_schools->{$school}{$city}];
+	}
+    }
+    return \@missing;
 }
 
 sub clean_file_path {
