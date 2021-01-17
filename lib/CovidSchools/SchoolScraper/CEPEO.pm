@@ -26,4 +26,13 @@ sub table_fields {
 	);
 }
 
+# because of invalid certificate errors
+sub new_user_agent {
+    return LWP::UserAgent->new(
+	agent=>'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:62.0) Gecko/20100101 Firefox/62.0',
+	ssl_opts => {verify_hostname => 0,
+		     SSL_verify_mode => 0x00},
+	);
+}
+
 1;

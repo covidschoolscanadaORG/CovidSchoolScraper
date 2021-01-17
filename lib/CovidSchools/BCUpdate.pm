@@ -515,6 +515,7 @@ END
     my ($src) = $data =~ m!<img src="([^"]+)"!;
     return 400 unless $src;
 
+    mkdir $dest_dir unless -e $dest_dir;
     my $response = mirror($src,"$dest_dir/$filename");
 
     return $response;
