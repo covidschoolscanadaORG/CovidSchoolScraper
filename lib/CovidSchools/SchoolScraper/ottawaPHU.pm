@@ -21,6 +21,7 @@ sub csv {
     $csv   .= $self->header;
     my $table = $self->{raw_content};
     $table    =~ s/,\s*$//gm;  # remove pesky trailing commas
+    $table    =~ s/\r//gm;     # remove carriage returns
     my @rows  = grep {/school|Facility Type/i} split "\n",$table;
     $csv .= join "\n",@rows;
     $csv;

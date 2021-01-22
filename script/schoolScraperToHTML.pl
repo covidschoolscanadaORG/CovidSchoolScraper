@@ -202,7 +202,9 @@ sub csv_2_html {
     my $file = shift;
     my $dsb  = shift;
     my $aoa  = csv(in       => $file,
-		   encoding => 'UTF-8',
+		   encoding => 'utf-8',
+		   allow_loose_quotes=>1,
+		   diag_verbose=>1,
 	);
 
     my ($title,$source,$date,$ready_for_data,$header,$count);

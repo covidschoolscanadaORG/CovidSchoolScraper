@@ -17,7 +17,7 @@ sub parse {
     my $self = shift;
     my $content = shift;
 
-    $self->{raw_content} = decode('UTF-8',$content);
+    $self->{raw_content} = $content;
     my $array_of_array   = Text::CSV::csv(in=>\$content);
 
     my @table;
