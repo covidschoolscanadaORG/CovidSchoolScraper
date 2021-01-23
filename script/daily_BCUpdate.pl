@@ -8,8 +8,9 @@ use File::Temp 'tempdir';
 use Fcntl;
 use DB_File;
 
-use constant CACHE_DIR=> '/tmp/BCUpdateCache';
-use constant GDRIVE   => '/BC';
+#use constant CACHE_DIR=> '/tmp/BCUpdateCache';
+use constant CACHE_DIR => "$Bin/../scraped_data/BCUpdateCache";
+use constant GDRIVE    => '/BC';
 
 mkdir CACHE_DIR unless -e CACHE_DIR;
 
@@ -50,8 +51,17 @@ exit 0;
 sub make_gdrive_url {
     my $gdrive_path = shift;
     return $GDriveCache{$gdrive_path} if $GDriveCache{$gdrive_path};
-    my $url = `rclone --drive-shared-with-me link "gdrive:$gdrive_path"`;
-    chomp $url;
+    my $url;
+    my $tries = 0;
+    while (!$url && $tries++ < 5) {
+	$url = `rclone --drive-shared-with-me link "gdrive:$gdrive_path" 2>/dev/null`;
+	chomp $url;
+	unless ($url) {
+	    sleep 1;
+	    system "sync";
+	}
+    }
+    print STDERR $tries if $tries > 1;
     $GDriveCache{$gdrive_path} = $url if $url;
     return $url;
 }

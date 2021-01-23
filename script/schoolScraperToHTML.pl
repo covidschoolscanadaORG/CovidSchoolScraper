@@ -49,6 +49,11 @@ Title: COVID-19 School Advisories $DATE
 <head>
 <title>COVID-19 School Advisories $DATE</title>
 <style>
+th,td { font-size: 14px; }
+table {
+    border: 1px solid;
+    width: 100%;
+}
 tr.odd {
     background-color: wheat;
 }
