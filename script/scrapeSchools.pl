@@ -24,7 +24,9 @@ for my $subclass (@s) {
     next if skipit($subclass,\%modules);
     eval "use $subclass; 1" or die $@;
     my $dsb = $subclass->new();
-    my $dest_file = scrape_and_save($dsb);
+    # to avoid bugs in one module from aborting whole script
+    print STDERR "Scraping $subclass...\n";
+    my $dest_file = eval { scrape_and_save($dsb) };
 }
 
 exit 0;

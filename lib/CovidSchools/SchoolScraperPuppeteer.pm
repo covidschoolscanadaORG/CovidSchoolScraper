@@ -36,7 +36,13 @@ const fs        = require('fs');
 (async () => {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
-  await page.goto('$url');
+  try {
+    await page.goto('$url');
+  }
+  catch(err) {
+    console.error("Timed out fetching $url");
+    process.exit(-1);
+  }
   await page.waitForTimeout(500);  
   await delay(4000);
   const html = await page.content();
