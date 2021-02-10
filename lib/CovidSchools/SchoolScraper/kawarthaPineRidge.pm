@@ -15,8 +15,7 @@ sub new {
 
 sub parsed_headers {
     ['School Name',
-     'Active Confirmed Student Cases of COVID-19',
-     'Active Confirmed Staff Cases of COVID-19',
+     'Active Confirmed Cases of COVID-19',
      'Status'
     ]
 }
@@ -24,8 +23,7 @@ sub parsed_headers {
 sub table_fields {
     return (
 	'School Name',
-	'Confirmed Student',
-	'Confirmed Staff',
+	'Confirmed',
 	'Status',
 	);   
 }

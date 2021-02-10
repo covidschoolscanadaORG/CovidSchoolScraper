@@ -21,7 +21,7 @@ sub table_fields {
 	'Total',
 	'Resolved',
 	'Outbreak',
-	'Class',
+	'Status',
 	'Date',
 	)
 }
