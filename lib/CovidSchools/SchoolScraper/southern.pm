@@ -3,10 +3,12 @@ package CovidSchools::SchoolScraper::southern;
 use 5.006;
 use strict;
 use warnings;
+use Carp 'croak';
 use base 'CovidSchools::SchoolScraper::northern';
 
 sub new {
     my $class = shift;
+    croak "None of the Manitoba scrapers are working!";
     return $class->CovidSchools::SchoolScraper::new(
 	PROVINCE => 'Manitoba',
 	DISTRICT => 'Southern Health-Santè Sud',

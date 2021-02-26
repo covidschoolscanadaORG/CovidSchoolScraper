@@ -3,22 +3,31 @@ package CovidSchools::SchoolScraper::northern;
 use 5.006;
 use strict;
 use warnings;
-use base 'CovidSchools::SchoolScraper';
+use Carp 'croak';
+use base 'CovidSchools::SchoolScraperPuppeteer';
+
+# NOTE: HTML is not a standard table - needs special parsing
 
 sub new {
     my $class = shift;
+    croak "This district does not return a <table> and requires special parsing";
     return $class->SUPER::new(
 	PROVINCE => 'Manitoba',
 	DISTRICT => 'Northern',
-	URL      => 'http://www.manitoba.ca/covid19/restartmb/prs/northern/index.html#north_schools',
+	#	URL      => 'http://www.manitoba.ca/covid19/restartmb/prs/northern/index.html#north_schools',
+	URL      => 'https://experience.arcgis.com/experience/611bde4f5cd644629f428f0ccf9c9498/page/page_1/',
 	);
 }
 
 sub table_fields {
     return (
-	'Town',
 	'Location',
-	'Dates/Times',
+	'Total',
+	'Staff',
+	'Non-staff',
+	'Active',
+	'Recovered',
+	'Deaths',
 	);   
 }
 
@@ -34,11 +43,9 @@ sub csv {
 	my @data  = map {  defined ? (/[,\s]/ ? "\"$_\"" : $_)
 			       : '' } @$row;
 	foreach (@data) {$self->clean_text(\$_)};
-	unless ($data[0] =~ /town/i || $data[1] =~ /school|collegiate|child|elementary|elemental|middle|ècole/i) {
+	unless ($data[0] =~ /school|collegiate|child|elementary|elemental|middle|ècole/i) {
 	    next;
 	}
-	$data[0]       ||= $previous_town;
-	$previous_town   = $data[0];
 	$csv     .= join(",",@data)."\n";
     }
     return $self->header.$csv;

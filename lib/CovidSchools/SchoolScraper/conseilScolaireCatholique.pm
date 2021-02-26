@@ -19,7 +19,6 @@ sub table_fields {
 	'Nom',
 	'Région',
 	'Nouveaux cas',
-	'Cas',
 	'Statut',
 	'Date',
 	)
