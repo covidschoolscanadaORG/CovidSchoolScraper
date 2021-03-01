@@ -25,7 +25,7 @@ my ($TODAY)  = $DATE =~ m!(\d+-\d+-\d+)T\d+:!;
 
 my @dsbs = map {
     my $dsb = eval "use $_; 1" && eval {$_->new()};
-    warn $@ unless $dsb;
+    warn "$_: $@" unless $dsb;
     $dsb ? $dsb : ();
 } sort CovidSchools::SchoolScraper->board_subclasses;
 

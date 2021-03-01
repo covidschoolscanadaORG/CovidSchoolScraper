@@ -8,7 +8,7 @@ use base 'CovidSchools::SchoolScraper::northern';
 
 sub new {
     my $class = shift;
-    croak "This district does not return a <table> and requires special parsing";
+    croak "None of the Manitoba scrapers are working due to a recent change in table format.";
     return $class->CovidSchools::SchoolScraper::new(
 	PROVINCE => 'Manitoba',
 	DISTRICT => 'Interlake Eastern',
