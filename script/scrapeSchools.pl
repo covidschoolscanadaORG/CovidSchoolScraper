@@ -22,11 +22,14 @@ my %modules = map {$_=>1} @modules;
 my @s = CovidSchools::SchoolScraper->board_subclasses;
 for my $subclass (@s) {
     next if skipit($subclass,\%modules);
-    eval "use $subclass; 1" or die $@;
-    my $dsb = $subclass->new();
-    # to avoid bugs in one module from aborting whole script
-    print STDERR "Scraping $subclass...\n";
-    my $dest_file = eval { scrape_and_save($dsb) };
+    eval "use $subclass; 1" or warn $@ && next;
+    eval {
+	my $dsb = $subclass->new();
+	# to avoid bugs in one module from aborting whole script
+	print STDERR "Scraping $subclass...\n";
+	my $dest_file = scrape_and_save($dsb);
+	1;
+    } or warn $@;
 }
 
 exit 0;

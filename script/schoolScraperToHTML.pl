@@ -24,12 +24,12 @@ my $DATE     = DateTime->now(time_zone=>'local')->set_time_zone('floating');
 my ($TODAY)  = $DATE =~ m!(\d+-\d+-\d+)T\d+:!;
 
 my @dsbs = map {
-    eval "use $_; 1" or die $@;
-    $_->new();
+    eval "use $_; 1" && eval {$_->new()};
 } sort CovidSchools::SchoolScraper->board_subclasses;
 
 my %provinces;
 foreach (@dsbs) {
+    next unless $_;
     my $province = $_->province;
     $provinces{$province}{$_->district}=$_;
 }
