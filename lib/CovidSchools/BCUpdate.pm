@@ -14,7 +14,7 @@ use Text::CSV 'csv';
 use String::Approx 'amatch','adist';
 use Encode 'encode','decode';
 use FindBin '$Bin';
-use Carp 'croak';
+use Carp 'croak','carp';
 
 # default locations for stuff
 use constant BASE          => "$ENV{HOME}/Dropbox/BC_Automation/School_Names_Reference/";
@@ -26,7 +26,7 @@ use constant CACHE_TIME    => 24 * 60 * 60;  # seconds to allow cache
 # destination for the cleaned csv stuff
 use constant CLEAN_CSV     => "$ENV{HOME}/Dropbox/BC_Automation/daily_update";
 
-use constant RESULTS_PER_PAGE => 1000;  # for grassroots paging
+use constant RESULTS_PER_PAGE => 200;  # for grassroots paging
 use constant GRASSROOTS_TRACKER           => 'https://bcschoolcovidtracker.knack.com/bc-school-covid-tracker#home/?view_3_per_page='.RESULTS_PER_PAGE;
 use constant COVID_SCHOOLS_CURATED_PAGE   => 'https://docs.google.com/spreadsheets/d/1MYDtPm_iaVHiiDtFBlToPD0a9JQF0CkXXSgrPL9w-Ko/export?format=csv&id=1MYDtPm_iaVHiiDtFBlToPD0a9JQF0CkXXSgrPL9w-Ko&gid=4733846';
 
@@ -34,8 +34,8 @@ use constant COVID_SCHOOLS_CURATED_PAGE   => 'https://docs.google.com/spreadshee
 use constant FUZZY_MATCH => '15%';
 
 # how long to wait for tracker page to load (milliseconds)
-use constant GRASSROOTS_TRACKER_DELAY=> 4000;   # for data to load, 4s per page
-use constant GRASSROOTS_PAGE_DELAY   => 1000;   # request interval, 1s between pages
+use constant GRASSROOTS_TRACKER_DELAY=> 5000;   # for data to load, 4s per page
+use constant GRASSROOTS_PAGE_DELAY   => 2000;   # request interval, 1s between pages
 
 =head1 SYNOPSIS
 
@@ -358,6 +358,7 @@ sub get_grassroots_html {
     chomp($node);
 
     my $page_url = $url . "&view_3_page=$page";
+    print STDERR "Fetching $page_url...";
 
     my $node_script =<<END;
 const puppeteer = require('puppeteer');
@@ -393,6 +394,8 @@ END
     while (<$infh>) {
 	$html .= $_;
     }
+
+    print STDERR length($html)," bytes\n";
     
     return $html;
 }
@@ -441,7 +444,7 @@ sub get_grassroots_tracker_table {
 	}
 	
 	my @r = eval {$extractor->rows};
-	unless (@r) { croak "Couldn't find parseable table in the HTML" }
+	unless (@r) { carp "Couldn't find parseable table in the HTML" && next }
     
 	foreach (@r) {
 	    foreach (@$_) {
@@ -495,7 +498,7 @@ sub mirror_articles {
    
     my (%retrieval_status,$total);
     for my $row (@$table) {
-	my $documentation = $row->[9]                                                     or next;
+	my $documentation = $row->[11]                                                     or next;
 	my $mirror_dest   = $self->bc_schoolname_to_google_directory($row->[1],$row->[3]) or next;
 	my $url           = $self->get_url_for_link($documentation)                       or next;
 
@@ -643,8 +646,9 @@ sub grassroots_headers {
 	    'Notification',
 	    'Exposure Dates',
 	    'Extra Info',
-	    'Documentation',
-	    'Status');
+	    'Variant of Concern',
+	    'In School Transmissions',
+	    'Documentation');
 }
 
 ######### canonicalize school names ########
