@@ -22,7 +22,8 @@ if ($? == -1) {
     die "Aborting due to previous errors";
 }
 system "./script/schoolScraperToHTML.pl $scrapedir > $scrapedir/SUMMARY-$ts.html";
-system 'rclone','copy',$scrapedir,BACKUP_SITE;
+#system 'rclone','copy',$scrapedir,BACKUP_SITE;
+system 'rclone','sync',$scrapedir,BACKUP_SITE;
 system "./script/update-covidschoolscanada-io.pl",GITHUBIO;
 chdir "../covidschoolscanada.github.io";
 system "git add daily_reports";

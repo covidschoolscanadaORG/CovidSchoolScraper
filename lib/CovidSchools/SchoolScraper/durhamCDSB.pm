@@ -20,17 +20,17 @@ sub parse_text {
 }
 
 sub headers {
-    return ['School','Address','Confirmed Unresolved Cases'];
+    return ['School','Address','Confirmed Cases','Resolved Cases'];
 }
 
 sub table {
     my $self = shift;
     my @table;
     
-    while ($self->{converted_text} =~ /^(.+)\n{2,}(.+)\n(\d+) Confirmed Case/mg) {
-	my $school = $1;
+    while ($self->{converted_text} =~ /^(.+)\n{2,}(.+)\n(\d+) Confirmed Cases?\n(?:(\d+) Resolved Case)?/mg) {
+	my ($school,$address,$confirmed,$resolved) = ($1,$2,$3,$4);
 	$school =~ s/\240//g; # nbsp character
-	push @table,[$school,$2,$3];
+	push @table,[$school,$address,$confirmed||0,$resolved||0];
     }
     return \@table;
 }
