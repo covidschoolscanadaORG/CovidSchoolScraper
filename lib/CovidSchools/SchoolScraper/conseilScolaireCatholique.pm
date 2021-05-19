@@ -14,10 +14,17 @@ sub new {
 	);
 }
 
+sub create_extractor {
+    my $self = shift;
+    HTML::TableExtract->new(headers      => $self->column_headers,
+			    keep_headers => 1,
+			    slice_columns => 0,
+			    debug        => 0,
+	);
+}
 sub table_fields {
     return (
-	'Nom',
-	'Région',
+	'Bureau',
 	'Nouveaux cas',
 	'Statut',
 	'Date',
@@ -26,20 +33,20 @@ sub table_fields {
 
 sub csv {
     my $self = shift;
-    my $headers = $self->parsed_headers;
     my $rows    = $self->{table};
-    my $aoa     = [$headers,@$rows];
+    my $aoa     = $rows;
     my $csv = '';
     for my $row (@$aoa) {
 	my @data  = map {  defined ? (/[,\s]/ ? "\"$_\"" : $_)
 			       : '' } @$row;
 	foreach (@data) {$self->clean_text(\$_)};
-	unless ($data[0]) {
+	unless ($data[2]) { # skip empty rows
 	    next;
 	}
+	shift @data; # undesirable row counter in first cell
 	$csv     .= join(",",@data)."\n";
     }
-    return $self->header.$csv;
+    return $csv;
 }
 
 
